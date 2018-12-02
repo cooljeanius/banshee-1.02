@@ -37,6 +37,8 @@
   #include "parser.tab.h"
   #include "hash.h"
 
+  extern int yyerror(char *);
+
   void flush_lexer() { YY_FLUSH_BUFFER; }
 %}
 
@@ -86,4 +88,4 @@ TICK [\']
 .
 %%
 
-yyerror( char *msg ) { fprintf( stderr, "%s\n", msg ); }
+int yyerror(char *msg) { return fprintf(stderr, "%s\n", msg); }

@@ -53,10 +53,10 @@ CC = gcc
 
 ifdef DEBUG
 CFLAGS = -I$(engine_dir) -I$(region_dir) -Ddeletes= -Dtraditional= \
-         -Dsameregion= -Dparentptr= -Wall -Werror -g -pg
+         -Dsameregion= -Dparentptr= -Wall -g -pg
 else
 CFLAGS = -I$(engine_dir) -I$(region_dir) -Ddeletes= -Dtraditional= \
-         -Dsameregion= -Dparentptr= -Wall -Werror 
+         -Dsameregion= -Dparentptr= -Wall
 endif
 
 .PHONY: clean 

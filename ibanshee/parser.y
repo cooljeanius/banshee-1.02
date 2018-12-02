@@ -37,6 +37,8 @@
 #include "banshee_persist_kinds.h"
 #include "banshee_region_persist_kinds.h"
 
+#include <string.h> /* for strcmp() */
+
 static region ibanshee_region;
 static hash_table constructor_env;
 static hash_table named_env;
@@ -45,8 +47,10 @@ static int interactive = 1;
 static sort_kind current_row_base_sort;
 
 extern FILE *yyin;
+extern int yyerror(char *);
+extern int yylex(void);
 
-void ibanshee_error_handler(gen_e e1, gen_e e2, banshee_error_kind bek) 
+void ibanshee_error_handler(gen_e e1, gen_e e2, banshee_error_kind bek)
 {
   fprintf(stderr,"Warning: ");
   switch(bek) {
@@ -70,9 +74,9 @@ static void save_cs(const char *filename)
 {
   FILE *f;
   hash_table entry_points[3] = {constructor_env,named_env,var_env};
-  
+
   f = fopen(filename, "wb");
-  
+
   assert(f);
 
   serialize_cs(f, entry_points, 3);
@@ -87,7 +91,7 @@ static void rsave_cs(const char *filename)
   fwrite((void *)&constructor_env, sizeof(hash_table), 1, f);
   fwrite((void *)&named_env, sizeof(hash_table), 1, f);
   fwrite((void *)&var_env, sizeof(hash_table), 1, f);
-  
+
   serialize(get_persistent_regions("extras"), "data", "offsets");
   write_module_nonspec(f);
 }
@@ -165,23 +169,23 @@ Commands         : !help\n\
                    !exit\n");
 }
 
-static void print_tlb(gen_e e) 
+static void print_tlb(gen_e e)
 {
   gen_e_list sol = setif_tlb(e);
-	       
+
   if (gen_e_list_length(sol) == 0) {
     printf("{}\n");
   }
   else {
     gen_e next;
     gen_e_list_scanner scan;
-    
+
     gen_e_list_scan(sol,&scan);
-    
+
     gen_e_list_next(&scan,&next);
     printf("{");
     expr_print(stdout,next);
-    
+
     while(gen_e_list_next(&scan,&next)) {
       printf(", ");
       expr_print(stdout,next);
@@ -196,20 +200,20 @@ static void ibanshee_init(void) {
   register_error_handler(ibanshee_error_handler);
 
   ibanshee_region = newregion();
-  constructor_env = 
+  constructor_env =
     make_persistent_string_hash_table(32,
 				      BANSHEE_PERSIST_KIND_constructor);
-  named_env = 
+  named_env =
     make_persistent_string_hash_table(32,
 				      BANSHEE_PERSIST_KIND_gen_e);
-  var_env = 
+  var_env =
     make_persistent_string_hash_table(32,
 				      BANSHEE_PERSIST_KIND_gen_e);
 }
 
 void flush_lexer(void);
 
-%}			
+%}
 
 %start program
 
@@ -247,7 +251,7 @@ void flush_lexer(void);
    identifiers,and interpreted after lexing. */
 
 %token TOK_SETIF "setIF"
-%token TOK_TERM "term" 
+%token TOK_TERM "term"
 %token TOK_FLOW "flow"
 %token TOK_ROW "row"
 %token TOK_PROJ "proj"
@@ -257,7 +261,7 @@ void flush_lexer(void);
 %type <exprs> expr_list
 %type <esort> esort
 %type <sort> basesort
-%type <sort> sort 
+%type <sort> sort
 %type <sig_elt_ptr> sig_elt
 %type <pat> pattern
 %type <rowmap> rowmap
@@ -276,12 +280,12 @@ void flush_lexer(void);
   sig_elt_list sig;
   pattern pat;
 }
-			      
- 
+
+
 %%
 
-program: 
-         line 
+program:
+         line
          { }
         | program line
          { }
@@ -304,7 +308,7 @@ toplev:    decl
 ;
 
 decl:      TOK_VAR TOK_COLON esort
-           { 
+           {
 	     gen_e fresh_var;
 
 	     if (hash_table_lookup(var_env,$1,NULL)) {
@@ -323,9 +327,9 @@ decl:      TOK_VAR TOK_COLON esort
 		 fresh_var = flowrow_fresh($1,setif_sort);
 		 break;
 	       case e_flowrow_term_sort:
-                 fresh_var = flowrow_fresh($1,term_sort); 
+                 fresh_var = flowrow_fresh($1,term_sort);
 		 break;
-	       }	     
+	       }
 	       hash_table_insert(var_env,rstrdup(banshee_nonptr_region,$1),fresh_var);
 	       printf("var: ");
 	       expr_print(stdout, fresh_var);
@@ -362,7 +366,7 @@ decl:      TOK_VAR TOK_COLON esort
 	     }
            }
          | TOK_IDENT TOK_LPAREN signature TOK_RPAREN TOK_COLON basesort
-           { 
+           {
 	     if (hash_table_lookup(constructor_env,$1,NULL)) {
                fprintf(stderr,"Attempted to redefine existing constructor: %s\n",$1);
 	       YYABORT;
@@ -380,7 +384,7 @@ decl:      TOK_VAR TOK_COLON esort
 ;
 
 signature: sig_elt
-           { 
+           {
              sig_elt_list sig = new_sig_elt_list(ibanshee_region);
              sig_elt_list_cons($1,sig);
              $$ = sig;
@@ -388,7 +392,7 @@ signature: sig_elt
          | signature TOK_COMMA sig_elt
            {
              sig_elt_list_cons($3,$1);
-             $$ = $1; 
+             $$ = $1;
            }
 ;
 
@@ -414,7 +418,7 @@ sig_elt:   TOK_POS sort
 	     $$ = eltptr;
            }
 ;
- 
+
 sort:       basesort
            { $$ = $1;}
          | TOK_ROW TOK_LPAREN basesort TOK_RPAREN
@@ -428,17 +432,17 @@ esort:      basesort
                case term_sort: $$ = e_term_sort; break;
 	     default: fprintf(stderr,"Bad base sort\n");
 	       YYABORT;
-	     } 
+	     }
            }
          | TOK_ROW TOK_LPAREN basesort TOK_RPAREN
-           { 
+           {
              switch($3) {
 	       case setif_sort: $$ = e_flowrow_setif_sort; break;
                case term_sort: $$ = e_flowrow_term_sort; break;
 	     default: fprintf(stderr,"Bad base sort\n");
 	       YYABORT;
 	     }
-           } 
+           }
 ;
 
 basesort:  TOK_SETIF
@@ -454,9 +458,9 @@ constraint: expr TOK_LEQ expr
 ;
 
 expr:    TOK_VAR
-           { 
+           {
 	     gen_e v = NULL;
-	     
+
 	     if (hash_table_lookup(var_env,$1,(hash_data*)&v)) {
 	       $$ = v;
 	     }
@@ -485,7 +489,7 @@ expr:    TOK_VAR
 	     constructor c = NULL;
 
 	     if (hash_table_lookup(constructor_env,$1,(hash_data *)&c)) {
-	       $$ = 
+	       $$ =
 		 constructor_expr(c,
 				  gen_e_list_array_from_list(ibanshee_region,gen_e_list_reverse($3)),
 				  gen_e_list_length($3));
@@ -497,16 +501,16 @@ expr:    TOK_VAR
            }
          | expr TOK_UNION expr	/* the union of e1 and e2 */
            {
-             gen_e_list exprs = new_gen_e_list(ibanshee_region); 
+             gen_e_list exprs = new_gen_e_list(ibanshee_region);
              gen_e_list_cons($1, exprs);
-             gen_e_list_cons($3, exprs); 
+             gen_e_list_cons($3, exprs);
              $$ = setif_union(exprs);
            }
          | expr TOK_INTER expr	/* the intersection of e1 and e2 */
-           { 
-             gen_e_list exprs = new_gen_e_list(ibanshee_region); 
+           {
+             gen_e_list exprs = new_gen_e_list(ibanshee_region);
              gen_e_list_cons($1, exprs);
-             gen_e_list_cons($3, exprs); 
+             gen_e_list_cons($3, exprs);
              $$ = setif_inter(exprs);
            }
          | TOK_LANGLE row TOK_RANGLE /* a row */
@@ -514,7 +518,7 @@ expr:    TOK_VAR
              $$ = $2;
            }
          | TOK_INTEGER TOK_COLON esort /* only 0,1 though */
-           { 
+           {
              if ($1 == 1) {
               switch($3) {
 	       case e_setif_sort: $$ = setif_one(); break;
@@ -523,7 +527,7 @@ expr:    TOK_VAR
 	       case e_flowrow_term_sort: $$ = flowrow_one(term_sort); break;
 	       default: fprintf(stderr,"Invalid sort for zero expression\n");
 		 YYABORT;
-              } 
+              }
 
              }
              else if ($1 == 0) {
@@ -534,7 +538,7 @@ expr:    TOK_VAR
 	       case e_flowrow_term_sort: $$ = flowrow_zero(term_sort); break;
 	       default: fprintf(stderr,"Invalid sort for one expression\n");
 		 YYABORT;
-	      } 
+	      }
 	     }
              else {
                fprintf(stderr,"Invalid expression\n");
@@ -542,21 +546,21 @@ expr:    TOK_VAR
 	     }
            }
          | TOK_WILD TOK_COLON esort	/* wildcard */
-           { 
+           {
              switch($3) {
 	     case e_flowrow_setif_sort: $$ = flowrow_wild(setif_sort); break;
 	     case e_flowrow_term_sort: $$ = flowrow_wild(term_sort); break;
 	     default: fprintf(stderr,"Invalid sort for wildcard expression\n");
 	       YYABORT;
-             }  
+             }
            }
          | TOK_PAT pattern	/* a projection pattern */
-           { 
-             $$ = setif_proj_pat($2.c,$2.i,$2.e); 
+           {
+             $$ = setif_proj_pat($2.c,$2.i,$2.e);
            }
          | TOK_PROJ pattern	/* a projection */
-           { 
-             $$ = setif_proj($2.c,$2.i,$2.e); 
+           {
+             $$ = setif_proj($2.c,$2.i,$2.e);
            }
 				/* another spelling for projection */
          | TOK_IDENT TOK_CARET TOK_NEG TOK_INTEGER TOK_LPAREN expr TOK_RPAREN
@@ -574,11 +578,11 @@ expr:    TOK_VAR
            { $$ = $2; }
 ;
 
-expr_list: expr 
+expr_list: expr
            {
              gen_e_list exprs = new_gen_e_list(ibanshee_region);
              gen_e_list_cons($1,exprs);
-             $$ = exprs; 
+             $$ = exprs;
            }
          | expr_list TOK_COMMA expr
            {
@@ -586,19 +590,19 @@ expr_list: expr
              $$ = $1;
            }
 ;
- 
+
 row:       rowmap
-           { 
-             $$ = flowrow_make_row($1, flowrow_fresh("'rest", 
+           {
+             $$ = flowrow_make_row($1, flowrow_fresh("'rest",
 						     current_row_base_sort ));
            }
          | rowmap TOK_REST expr
-           { 
+           {
              $$ = flowrow_make_row($1, $3);
            }
 ;
 
-rowmap:    TOK_IDENT TOK_EQ expr 
+rowmap:    TOK_IDENT TOK_EQ expr
            {
 	     flowrow_field field;
 	     flowrow_map map;
@@ -619,10 +623,10 @@ rowmap:    TOK_IDENT TOK_EQ expr
 ;
 
 pattern:   TOK_LPAREN TOK_IDENT TOK_COMMA TOK_INTEGER TOK_COMMA expr TOK_RPAREN
-           { 
+           {
 	     constructor c = NULL;
 	     if (hash_table_lookup(constructor_env,$2,(hash_data *)&c)) {
-	       $$ = (pattern){c,$4,$6}; 
+	       $$ = (pattern){c,$4,$6};
 	     }
 	     else {
 	       fprintf(stderr,"Could not find constructor: %s\n",$2);
@@ -672,9 +676,9 @@ cmd:       TOK_CMD TOK_IDENT
 	     else if (!strcmp($2,"trace")) {
 	       fprintf(stderr,"Trace not yet implemented\n");
 	     }
-	   }  
+	   }
 	   /* TODO -- really handle strings surrounded by quotes in the lexer*/
-        |  TOK_CMD TOK_IDENT TOK_QUOTE TOK_IDENT TOK_QUOTE 
+        |  TOK_CMD TOK_IDENT TOK_QUOTE TOK_IDENT TOK_QUOTE
            {
              if (!strcmp($2,"save")) {
 	       save_cs($4);
@@ -684,7 +688,7 @@ cmd:       TOK_CMD TOK_IDENT
 	     }
            }
         |  TOK_CMD TOK_IDENT expr
-           { 
+           {
 	     if (!strcmp($2,"tlb")) {
 	       print_tlb($3);
 	     }
@@ -698,12 +702,12 @@ cmd:       TOK_CMD TOK_IDENT
 %%
 int main(int argc, char **argv) {
   ibanshee_init();
-  
+
   if (argc > 1) {
     if (!strcmp(argv[1],"-f")) {
       yyin = fopen(argv[2],"r");
       interactive = 0;
-      
+
       if (yyin == NULL) {
 	fprintf(stderr,"Failed to open file: %s\n",argv[2]);
       }
@@ -726,7 +730,7 @@ int main(int argc, char **argv) {
       int time = banshee_get_time();
       printf("[%d] > ",time);
       fflush(stdout);
-      
+
       if (yyparse()) { /* error parsing the line, ignore the remaining input */
 	flush_lexer();
       }

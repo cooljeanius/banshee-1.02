@@ -45,7 +45,7 @@ typedef struct dyck_node_ * dyck_node;
 DECLARE_LIST(dyck_node_list, dyck_node);
 
 // If true, inclusion constraints will be printed
-extern int flag_dyck_print_constraints; 
+extern int flag_dyck_print_constraints;
 
 /*****************************************************************************
  *                                                                           *
@@ -82,7 +82,7 @@ dyck_node make_untagged_dyck_node(const char *name);
 
 // Make a node tagged "empty". If any tag (besides empty) reaches this
 // node, the error callback will be triggered. The node will be called
-// name. 
+// name.
 dyck_node make_tagged_empty_dyck_node(const char *name);
 
 // Make a node tagged "universal". If this node reaches any tag (other
@@ -91,7 +91,7 @@ dyck_node make_tagged_empty_dyck_node(const char *name);
 dyck_node make_tagged_universal_dyck_node(const char *name);
 
 // Mark the argument node "global". Flow through global nodes is
-// always promoted to "matched". 
+// always promoted to "matched".
 void mark_dyck_node_global(dyck_node n);
 
 // Make an s edge between n1 and n2
@@ -120,8 +120,8 @@ void make_dyck_close_edge(dyck_node n1, dyck_node n2, int index);
 
 // Make (_{i} between each of n1s and n2, with the given
 // indices. length indicates how many.
-void make_clustered_dyck_open_edges(dyck_node n1s[], dyck_node n2, 
-				    int indices[], int length);
+void make_clustered_dyck_open_edges(dyck_node n1s[], dyck_node n2,
+				    intptr_t indices[], int length);
 
 // Make a )_{index} edge between n1 and n2, where the corresponding open
 // edge was created by make_grouped_dyck_open_edges. Open and close edges
