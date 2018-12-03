@@ -39,7 +39,7 @@ BANSHEE= $(banshee_bindir)/banshee.exe
 
 RCA = rca_types
 
-TARGETS =  $(RCA).h $(RCA).c $(RCA).o rca_analyze.o 
+TARGETS =  $(RCA).h $(RCA).c $(RCA).o rca_analyze.o
 
 TAGFILES = *.c *.h
 
@@ -59,16 +59,16 @@ all: $(TARGETS) #TAGS
 
 $(RCA).c: $(RCA).bsp $(BANSHEE)
 	$(BANSHEE) $(RCA).bsp $(RCA)
-	indent -npsl $@ 
+	indent -npsl $@
 
 $(RCA).h: $(RCA).c
-	indent -npsl $@ 
+	indent -npsl $@
 
 TAGS: $(TAGFILES)
 	etags $(TAGFILES)
 
 # build banshee if necessary
-$(BANSHEE): 
+$(BANSHEE):
 	$(MAKE) -C ../ banshee
 
 clean:

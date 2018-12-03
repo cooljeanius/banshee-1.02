@@ -39,11 +39,15 @@ banshee-manual.pdf: banshee-manual.tex banshee-manual.bib
 	pdflatex $(@:.pdf=.tex)
 	pdflatex $(@:.pdf=.tex)
 
-%.ps: %.dvi 
+%.ps: %.dvi
 	dvips -P cmz -t $(PAPERTYPE) $< -o $@
 
 %.dvi: $(SOURCES)
 	$(banshee_bindir)/slatex $(@:.dvi=.tex)
 
 clean:
-	-rm -f *.aux *.dvi *.log *.bbl *.blg *.ps banshee-manual.pdf *.toc *.lof *.lot *.xyc .cache* .cache.new *~ *.idx
+	-rm -f *.aux *.dvi *.log *.bbl *.blg *.ps *.toc *.lof *.lot *.xyc .cache* .cache.new *~ *.idx
+
+distclean: clean
+maintainer-clean: distclean
+	-rm -f banshee-manual.pdf

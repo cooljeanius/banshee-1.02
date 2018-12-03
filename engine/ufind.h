@@ -1,4 +1,4 @@
-/*
+/* engine/ufind.h
  * Copyright (c) 2000-2004
  *      The Regents of the University of California.  All rights reserved.
  *
@@ -62,10 +62,10 @@ void uf_init();
 void uf_reset();
 
 /* Create a new union find element with info i in region r  */
-uf_element new_uf_element(region r,uf_info i, int persist_kind);  
+uf_element new_uf_element(region r,uf_info i, int persist_kind);
 
 /* Return the info associated with the element's equivalence class */
-uf_info uf_get_info(uf_element ); 
+uf_info uf_get_info(uf_element );
 
 /* Put two elements in the same equivalence class. The information for
  * the equivalence class is determined by the combine_fn_ptr */
@@ -83,13 +83,13 @@ bool uf_eq(uf_element , uf_element );
 void uf_update(uf_element ,uf_info i);
 
 /* Put a mark on the history for rollback */
-void uf_tick();		
+void uf_tick();
 
 /* Undo just the last union/unify/update/tick */
-void uf_backtrack();		
+void uf_backtrack();
 
 /* Backtrack to the last tick */
-void uf_rollback(); 		
+void uf_rollback();
 
 /* Persistence */
 void uf_serialize(FILE *f);

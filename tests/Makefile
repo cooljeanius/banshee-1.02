@@ -43,11 +43,13 @@ ENGINE_LIB = $(engine_dir)/libengine.a
 CC = gcc
 
 CFLAGS = -I$(engine_dir) -I$(region_dir) -Ddeletes= -Dtraditional= \
-         -Dsameregion= -Dparentptr= -Wall 
+         -Dsameregion= -Dparentptr= -Wall -Wextra -Og -Wnull-dereference \
+	 -Wtrampolines -Wempty-body -Wlogical-op -Wjump-misses-init \
+	 -Wduplicated-branches -Wduplicated-cond
 
 ifdef DEBUG
 CFLAGS := -g -pg ${CFLAGS}
-endif 
+endif
 
 TAGFILES = $(wildcard *.c) $(wildcard *.h)
 
@@ -55,11 +57,11 @@ EXES = lambda-test.exe dyckcfl-random-test.exe \
        uf-bt-test.exe persist-test.exe dyckcfl-test.exe regexp-test.exe \
 	region-persist-test.exe dyckcfl-spec-test.exe
 
-TARGETS =  $(EXES) 
+TARGETS =  $(EXES)
 
 TARGETCHECK = $(patsubst %,check/%,$(EXES))
 
-all: $(TARGETS) 
+all: $(TARGETS)
 
 lambda-test.exe: lambda-test.c $(LAMBDA_EXTRA_OBJS) $(ENGINE_LIB) $(REGION_LIB)
 	$(CC) $(CFLAGS) -I$(lambda_dir) -o $@ $(LAMBDA_EXTRA_OBJS) $< -L$(region_dir) -L$(engine_dir) -lengine -lregions -lm
@@ -68,7 +70,7 @@ dyckcfl-spec-test.exe: dyckcfl-test.c $(DYCKCFL_SPEC_EXTRA_OBJS) $(ENGINE_LIB) $
 	$(CC) $(CFLAGS) -I$(dyckcfl_dir) -DSPEC -o $@ $(DYCKCFL_SPEC_EXTRA_OBJS) $< -L$(region_dir) -L$(engine_dir) -lengine -lregions -lm
 
 dyckcfl-test.exe: dyckcfl-test.c $(DYCKCFL_EXTRA_OBJS) $(NSENGINE_LIB) $(REGION_LIB)
-	$(CC) $(CFLAGS) -I$(dyckcfl_dir) -DNONSPEC -o $@ $(DYCKCFL_EXTRA_OBJS) $< -L$(region_dir) -L$(engine_dir) -lnsengine -lregions -lm 
+	$(CC) $(CFLAGS) -I$(dyckcfl_dir) -DNONSPEC -o $@ $(DYCKCFL_EXTRA_OBJS) $< -L$(region_dir) -L$(engine_dir) -lnsengine -lregions -lm
 
 dyckcfl-random-test.exe: dyckcfl-random-test.c $(DYCKCFL_EXTRA_OBJS) $(NSENGINE_LIB) $(REGION_LIB)
 	$(CC) $(CFLAGS) -I$(dyckcfl_dir) -DNONSPEC -o $@ $(DYCKCFL_EXTRA_OBJS) $< -L$(region_dir) -L$(engine_dir) -lnsengine -lregions -lm
@@ -83,11 +85,11 @@ regexp-test.exe: regexp-test.c $(NSENGINE_LIB) $(REGION_LIB)
 	$(CC) $(CFLAGS) -o $@ $< -L$(region_dir) -L$(engine_dir) -lnsengine -lregions -lm
 
 region-persist-test.exe: region-persist-test.c $(ENGINE_LIB) $(PERSISTENT_REGION_OBJ)
-	$(CC) $(CFLAGS) -o $@ $< -L$(region_dir) -L$(engine_dir) -lengine -lregions 
+	$(CC) $(CFLAGS) -o $@ $< -L$(region_dir) -L$(engine_dir) -lengine -lregions
 
-.PHONY: clean check 
+.PHONY: clean check
 
-$(LAMBDA_EXTRA_OBJS): 
+$(LAMBDA_EXTRA_OBJS):
 	$(MAKE) -C ../lambda
 
 $(DYCKCFL_EXTRA_OBJS):
@@ -105,12 +107,12 @@ $(ENGINE_LIB):
 $(PERSISTENT_REGION_OBJ):
 	$(MAKE) -C ../libcompat
 
-TAGS: 
+TAGS:
 	etags $(TAGFILES)
 
 check: $(TARGETS) $(TARGETCHECK)
 
-check/%: 
+check/%:
 	./$*
 	@echo ./$* passed
 

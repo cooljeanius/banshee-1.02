@@ -80,7 +80,7 @@ TAGS: $(TAGFILES)
 	etags $(TAGFILES)
 
 # build banshee if necessary
-$(BANSHEE): 
+$(BANSHEE):
 	$(MAKE) -C ../ banshee
 
 .PHONY: clean

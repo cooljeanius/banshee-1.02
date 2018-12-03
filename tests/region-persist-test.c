@@ -1,4 +1,4 @@
-/*
+/* tests/region-persist-test.c
  * Copyright (c) 2000-2004
  *      The Regents of the University of California.  All rights reserved.
  *
@@ -90,7 +90,7 @@ int verify()
   node next_node;
 
   assert(node_list_length(thelist) == NUM_NODES);
-  
+
   for (j = 0; j < NUM_NODES; j++) {
     snprintf(str, 512, "node(%d)", j);
     hash_table_lookup(thetable, str, (hash_data *)&next_node);
@@ -108,7 +108,7 @@ int verify()
     node n = ralloc(newregion(), struct node_);
     n->next = NULL;
   }
-  
+
   return 1;
 }
 
@@ -120,7 +120,9 @@ int main(int argc, char *argv[])
   int i = 0;
   node n = NULL;
   region node_region;
-  
+
+  assert(argc >= 0);
+  assert(argv != NULL);
   region_init();
   list_init();
   hash_table_init();

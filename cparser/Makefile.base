@@ -1,16 +1,16 @@
 #    This file is part of the RC compiler.
 #    Copyright (C) 2000-2001 The Regents of the University of California.
-# 
+#
 # RC is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2, or (at your option)
 # any later version.
-# 
+#
 # RC is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with RC; see the file COPYING.  If not, write to
 # the Free Software Foundation, 59 Temple Place - Suite 330,
@@ -44,9 +44,13 @@ AST_parent.c: nodetypes.def build-parent.el build-basics.el
 AST_print.c: nodetypes.def build-print.el build-basics.el
 	emacs -batch -load build-print.el
 
+ifdef DEBUG
+EXTRA_GPERFFLAGS := -d ${EXTRA_GPERFFLAGS}
+endif
+
 c-gperf.h: c-parse.gperf qualifiers.h
 	m4 c-parse.gperf | grep -v '^$$' | \
-	gperf -p -j1 -i 1 -g -o -t -G -N is_reserved_word -k1,3,$$ >c-gperf.h
+	gperf ${EXTRA_GPERFFLAGS} -p -j1 -i 1 -g -o -t -G -N is_reserved_word -k1,3,$$ >c-gperf.h
 
 $(OBJS): $(O)%.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
@@ -83,7 +87,7 @@ $(O)temps.o: temps.c $(HDRS)
 $(O)dhash.o: dhash.c $(HDRS)
 $(O)array.o: array.c $(HDRS)
 $(O)graph.o: graph.c $(HDRS)
-$(O)dd_list.o: dd_list.c dd_list.h 
+$(O)dd_list.o: dd_list.c dd_list.h
 $(O)sd_list.o: sd_list.c sd_list.h
 $(O)bitset.o: bitset.c bitset.h config.h cstring.h
 $(O)mbchar.o: mbchar.c mbchar.h

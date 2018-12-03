@@ -35,7 +35,7 @@ all: ibanshee.exe
 
 ibanshee.exe: parser.tab.c lex.yy.c
 	gcc -DNONSPEC -Ddeletes= -Dtraditional= -Dsameregion= \
-	 -Dparentptr=  -o ibanshee.exe lex.yy.c parser.tab.c -I../engine -I$(region_dir) -L../engine -L$(region_dir) -lnsengine -lregions -lfl 
+	 -Dparentptr=  -o ibanshee.exe lex.yy.c parser.tab.c -I../engine -I$(region_dir) -L../engine -L$(region_dir) -lnsengine -lregions -lfl
 	cp ibanshee.exe ../bin
 
 parser.tab.c: parser.y
@@ -44,5 +44,5 @@ parser.tab.c: parser.y
 lex.yy.c: lexer.lex
 	flex lexer.lex
 
-clean: 
+clean:
 	rm -rf *.o parser.tab.h parser.tab.c lex.yy.c gmon.out ../bin/ibanshee.exe ibanshee.exe *~

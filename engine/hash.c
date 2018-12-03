@@ -1,4 +1,4 @@
-/*
+/* engine/hash.c
  * Copyright (c) 2000-2004
  *      The Regents of the University of California.  All rights reserved.
  *
@@ -35,6 +35,10 @@
 #include "persist.h"
 #include "banshee_region_persist_kinds.h"
 
+#ifndef DEBUG
+# define DEBUG 1
+#endif /* !DEBUG */
+
 struct bucket_
 {
   hash_key key;
@@ -66,8 +70,8 @@ struct Hash_table
 
   int key_persist_kind; 	/* Kind for persistent keys */
   int data_persist_kind;	/* Kind for persistent data */
-  int hash_fn_id;		
-  int keyeq_fn_id; 
+  int hash_fn_id;
+  int keyeq_fn_id;
 
   bucket *table;		/* Array of (size) buckets */
 };
@@ -92,7 +96,7 @@ static void rehash(hash_table ht);
 
 extern hash_table fn_ptr_table;
 
-static hash_table make_hash_table_int(region r, unsigned long size, 
+static hash_table make_hash_table_int(region r, unsigned long size,
 				      hash_fn hash, keyeq_fn cmp,
 				      int key_persist_kind,
 				      int data_persist_kind)
@@ -104,7 +108,7 @@ static hash_table make_hash_table_int(region r, unsigned long size,
   assert(bucket_region);
   assert(bucketptr_region);
 
-  result = ralloc(r? r : table_region, 
+  result = ralloc(r? r : table_region,
 		  struct Hash_table);
   result->r = r;
   result->hash = hash;
@@ -113,7 +117,7 @@ static hash_table make_hash_table_int(region r, unsigned long size,
   result->log2size = 0;
 
   if (fn_ptr_table) {
-    hash_table_lookup(fn_ptr_table, (hash_key)hash, 
+    hash_table_lookup(fn_ptr_table, (hash_key)hash,
 		      (hash_data*)&result->hash_fn_id);
     hash_table_lookup(fn_ptr_table, (hash_key)cmp,
 		      (hash_data*)&result->keyeq_fn_id);
@@ -135,12 +139,12 @@ static hash_table make_hash_table_int(region r, unsigned long size,
 }
 
 
-hash_table make_persistent_hash_table(unsigned long size, 
+hash_table make_persistent_hash_table(unsigned long size,
 				      hash_fn hash, keyeq_fn cmp,
 				      int key_persist_kind,
 				      int data_persist_kind)
 {
-  return make_hash_table_int(NULL, size, hash, cmp, key_persist_kind, 
+  return make_hash_table_int(NULL, size, hash, cmp, key_persist_kind,
 			     data_persist_kind);
 }
 
@@ -156,10 +160,10 @@ hash_table make_persistent_string_hash_table(unsigned long size,
 					     int data_persist_kind)
 {
   return make_hash_table_int(NULL, size, (hash_fn)string_hash,
-			     (keyeq_fn)string_eq, 
+			     (keyeq_fn)string_eq,
 			     STRING_PERSIST_KIND, data_persist_kind);
 }
-					     
+
 
 /* Make a hash table for strings. */
 hash_table make_string_hash_table(region rhash, unsigned long size)
@@ -205,7 +209,7 @@ static inline bucket *find_bucket(hash_table ht, hash_key k)
 
 /* Given a comparison function which agrees with our hash_function,
    search for the given element. */
-bool hash_table_hash_search(hash_table ht, keyeq_fn cmp, 
+bool hash_table_hash_search(hash_table ht, keyeq_fn cmp,
 			    hash_key k, hash_data *d)
 {
   bucket cur;
@@ -258,7 +262,7 @@ bool hash_table_insert(hash_table ht, hash_key k, hash_data d)
 }
 
 /* Remove mapping for k in ht.  Returns TRUE if k was in ht. */
-bool hash_table_remove(hash_table ht, hash_key k) 
+bool hash_table_remove(hash_table ht, hash_key k)
 {
   bucket *cur;
   bucket prev = NULL;
@@ -346,27 +350,66 @@ void hash_table_scan(hash_table ht, hash_table_scanner *hts)
    otherwise. */
 bool hash_table_next(hash_table_scanner *hts, hash_key *k, hash_data *d)
 {
+#ifdef DEBUG
+  printf("scanner: %p, key: %p, data: %p\n", hts, k, d);
+#endif
   while (hts->cur == NULL)
     {
       hts->i++;
-      if (hts->i < hts->ht->size)
+      if (hts->i < hts->ht->size) {
 	hts->cur = hts->ht->table[hts->i];
-      else
+#ifdef DEBUG
+	printf("bucket: %p\n", hts->cur);
+#endif
+      } else {
 	break;
+      }
     }
 
+#ifdef DEBUG
+  printf("i: %lu, table: %p, size: %lu\n", hts->i, hts->ht, hts->ht->size);
+#endif
   if (hts->i == hts->ht->size)
     {
+#ifdef DEBUG
+      printf("There is no next element; returning FALSE.\n");
+#endif
       return FALSE;
     }
   else
     {
-      if (k)
-	*k = hts->cur->key;
-      if (d)
-	*d = hts->cur->data;
-      hts->cur = hts->cur->next;
+      if (k) {
+	if (hts && hts->cur) {
+	  *k = hts->cur->key; /* FIXME: crash here?!?!?! */
+	} else {
+#ifdef DEBUG
+	  printf("Cannot put key in k, so making it NULL instead.\n");
+#endif
+	  *k = NULL;
+	}
+      } else {
+	fprintf(stderr, "Cannot put key in k because k is NULL.\n");
+      }
+      if (d) {
+	if (hts && hts->cur) {
+	  *d = hts->cur->data;
+	} else {
+#ifdef DEBUG
+	  printf("Cannot put data in d, so making it NULL instead.\n");
+#endif
+	  *d = NULL;
+	}
+      } else {
+	fprintf(stderr, "Cannot put data in d because d is NULL.\n");
+      }
+      if (hts && hts->cur)
+	hts->cur = hts->cur->next;
+      else
+	fprintf(stderr, "Cannot make next element current.\n");
     }
+#ifdef DEBUG
+  printf("There is a next element; returning TRUE.\n");
+#endif
   return TRUE;
 }
 
@@ -392,7 +435,7 @@ hash_table hash_table_map(region r, hash_table ht, hash_map_fn f, void *arg)
 			       ht->key_persist_kind,
 			       ht->data_persist_kind);
   result->used = ht->used;
-  
+
   for (i = 0; i < ht->size; i++)
     {
       prev = &result->table[i];
@@ -482,16 +525,16 @@ bool hash_table_serialize(FILE *f, void *obj)
   assert(f);
   assert(obj);
 
-  fwrite(&ht->hash, sizeof(void *) * 2 + sizeof(unsigned long) * 3 + 
+  fwrite(&ht->hash, sizeof(void *) * 2 + sizeof(unsigned long) * 3 +
 	 sizeof(int) *4, 1, f);
-  
+
   serialize_object(ht->hash, 1);
   serialize_object(ht->cmp, 1);
 
   /* Write out all the key/value pairs */
   for (i = 0; i < ht->size; i++) {
     unsigned long num_buckets = get_num_buckets(ht->table[i]);
-    fwrite(&num_buckets, sizeof(unsigned long), 1, f); 
+    fwrite(&num_buckets, sizeof(unsigned long), 1, f);
     scan_bucket(ht->table[i], cur) {
       fwrite(&cur->key, sizeof(hash_key) + sizeof(hash_data), 1, f);
       serialize_object(cur->key,ht->key_persist_kind);
@@ -522,7 +565,7 @@ void *hash_table_deserialize(FILE *f)
   ht->table = rarrayalloc(ht->r, ht->size, bucket);
   for (i = 0; i < ht->size; i++) {
     unsigned long num_buckets,j;
-    fread(&num_buckets, sizeof(unsigned long), 1, f); 
+    fread(&num_buckets, sizeof(unsigned long), 1, f);
     prev = &ht->table[i];
     for (j = 0; j < num_buckets; j++) {
       newbucket = ralloc(ht->r, struct bucket_);
@@ -539,7 +582,7 @@ void *hash_table_deserialize(FILE *f)
 bool hash_table_set_fields(void *obj)
 {
  hash_table ht = (hash_table)obj;
-  
+
  unsigned long i;
  bucket cur;
 /*   bucket *oldtable = NULL, cur; */
@@ -554,7 +597,7 @@ bool hash_table_set_fields(void *obj)
 /*   ht->used = 0; */
 /*   ht->r = permanent; */
 /*   ht->table = rarrayalloc(ht->r, ht->size, bucket); */
-  
+
    /* Reinsert all the key/value pairs after they have been remapped */
   if (ht->data_persist_kind) {
     for (i = 0; i < ht->size; i++) {
@@ -573,14 +616,14 @@ bool hash_table_set_fields(void *obj)
 int update_hash_table(translation t, void *m)
 {
   hash_table tab = (hash_table)m;
-  
+
   assert(fn_ptr_table);
   //assert(tab->hash_fn_id < num_fn_ptrs);
   //assert(tab->keyeq_fn_id < num_fn_ptrs);
-  
+
   if (tab->hash_fn_id < num_fn_ptrs) {
     tab->hash = update_funptr_data(tab->hash_fn_id);
-    hash_table_lookup(fn_ptr_table, (hash_key)tab->hash, 
+    hash_table_lookup(fn_ptr_table, (hash_key)tab->hash,
 		      (hash_data*)&tab->hash_fn_id);
   }
 
@@ -589,7 +632,7 @@ int update_hash_table(translation t, void *m)
     hash_table_lookup(fn_ptr_table, (hash_key)tab->cmp,
 		      (hash_data*)&tab->keyeq_fn_id);
   }
-      
+
   update_pointer(t, (void **) &tab->table);
 
   return (sizeof(struct Hash_table));
@@ -637,11 +680,13 @@ void hash_table_init()
   keystrbucket_region = newregion();
 }
 
-/* void hash_table_reset() */
-/* { */
-/*   deleteregion(table_region); */
-/*   deleteregion(bucket_region); */
-/*   deleteregion(BUCKETPTR_REGION); */
-  
-/*   hash_table_init(); */
-/* } */
+#ifdef ALLOW_UNUSED_FUNCTIONS
+void hash_table_reset()
+{
+  deleteregion(table_region);
+  deleteregion(bucket_region);
+  deleteregion(BUCKETPTR_REGION);
+
+  hash_table_init();
+}
+#endif /* ALLOW_UNUSED_FUNCTIONS */

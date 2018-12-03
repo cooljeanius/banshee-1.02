@@ -55,8 +55,8 @@ DEFINE_NONPTR_LIST(mr_dyck_node_list,mr_dyck_node);
 #define MINIMIZE_CONSTRAINTS
 
 #ifdef MINIMIZE_CONSTRAINTS
-DECLARE_LIST(relevant_constraint_list,int);
-DEFINE_NONPTR_LIST(relevant_constraint_list,int);
+DECLARE_LIST(relevant_constraint_list,intptr_t);
+DEFINE_NONPTR_LIST(relevant_constraint_list,intptr_t);
 static relevant_constraint_list relevant_constraints;
 #endif
 
@@ -101,9 +101,9 @@ static void check_erroneous_edges(void)
   bool found = FALSE;
   mr_dyck_node_list_scanner scan;
   mr_dyck_node next_source;
-  
+
   mr_dyck_node_list_scan(mr_erroneous_sources,&scan);
-  
+
   while(mr_dyck_node_list_next(&scan,&next_source)) {
     state = mr_dyck_query; 	// HACK to allow queries here
     if (mr_dyck_check_reaches(next_source,mr_erroneous_sink)) {
@@ -126,7 +126,7 @@ static bool relevant_constraint(int num)
     return TRUE;
   {
     relevant_constraint_list_scanner scan;
-    int next;
+    intptr_t next;
 
     relevant_constraint_list_scan(relevant_constraints,&scan);
 
@@ -165,12 +165,13 @@ static constructor get_constructor(int index, mr_edge_kind kind)
   sig_elt c_sig[1] = {{vnc_pos,setif_sort}};
 
   // Add this index to the list of seen indices
-  if (!hash_table_lookup(mr_seen_indices,(void *)index, NULL)) {
-    hash_table_insert(mr_seen_indices,(void *)index,(void *)index);
+  if (!hash_table_lookup(mr_seen_indices, (void *)(intptr_t)index, NULL)) {
+    hash_table_insert(mr_seen_indices, (void *)(intptr_t)index,
+		      (void *)(intptr_t)index);
   }
 
   switch (kind) {
-  case mr_o: 
+  case mr_o:
     built_constructors = mr_o_hash;
     snprintf(name,512,"(_%d",index);
     break;
@@ -188,13 +189,14 @@ static constructor get_constructor(int index, mr_edge_kind kind)
 
   // Check the hash to see if the constructor has been built yet
   // If not, build the constructor
-  if (!hash_table_lookup(built_constructors,(void *)index,(hash_data *)&result)) {
+  if (!hash_table_lookup(built_constructors, (void *)(intptr_t)index,
+			 (hash_data *)&result)) {
     result = make_constructor(name,setif_sort,c_sig,1);
     // Hash it so that it can be be retrieved later
-    hash_table_insert(built_constructors,(void *)index,result);
+    hash_table_insert(built_constructors, (void *)(intptr_t)index, result);
   }
 
-  assert(hash_table_lookup(built_constructors,(void *)index,NULL));
+  assert(hash_table_lookup(built_constructors, (void *)(intptr_t)index, NULL));
   assert(result);
   return result;
 }
@@ -215,6 +217,7 @@ static void encode_KOS_production(mr_dyck_node n, int index)
   gen_e exps[1];
   gen_e rch,dst;
 
+  printf("encoding KOS production for node %p at index %d.\n", n, index);
   rch = setif_proj(get_constructor(index,mr_o),0,n->node_variable);
   dst = setif_proj(mr_s_constructor,0,rch);
   exps[0] = dst;
@@ -226,6 +229,7 @@ static void encode_SKC_production(mr_dyck_node n, int index)
   gen_e exps[1];
   gen_e rch,dst;
 
+  printf("encoding SKC production for node %p at index %d.\n", n, index);
   rch = setif_proj(get_constructor(index,mr_k),0,n->node_variable);
   dst = setif_proj(get_constructor(index,mr_c),0,rch);
   exps[0] = dst;
@@ -241,7 +245,7 @@ static void encode_startPN_production(mr_dyck_node n)
   dst = setif_proj(mr_n_constructor,0,rch);
   exps[0] = dst;
   mr_call_setif_inclusion(constructor_expr(mr_start_constructor,exps,1),n->node_variable);
-  
+
 }
 
 static void encode_PE_production(mr_dyck_node n)
@@ -302,7 +306,7 @@ static void encode_NSN_production(mr_dyck_node n)
   dst = setif_proj(mr_n_constructor,0,rch);
   exps[0] = dst;
   mr_call_setif_inclusion(constructor_expr(mr_n_constructor,exps,1),n->node_variable);
-}    
+}
 
 /*****************************************************************************
  *                                                                           *
@@ -383,7 +387,7 @@ void mr_dyck_reset()
  *                                                                           *
  *****************************************************************************/
 
-mr_dyck_node make_tagged_mr_dyck_node(const char *name) 
+mr_dyck_node make_tagged_mr_dyck_node(const char *name)
 {
   static int count = 0;
   char unique_name[512];
@@ -412,7 +416,7 @@ mr_dyck_node make_untagged_mr_dyck_node(const char *name)
   snprintf(unique_name,512,"mr_%s_%d",name,count++);
   result->node_constant = setif_constant(unique_name);
   result->node_variable = setif_fresh(name);
-  
+
   mr_dyck_node_list_cons(result,mr_all_nodes);
 
   return result;
@@ -426,13 +430,13 @@ mr_dyck_node make_tagged_empty_mr_dyck_node(const char *name)
 
   result->node_constant = setif_zero();
   result->node_variable = setif_fresh(name);
-  
+
   mr_dyck_node_list_cons(result,mr_all_nodes);
   mr_call_setif_inclusion(result->node_variable, result->node_constant);
 
   return result;
 }
-					   
+
 mr_dyck_node make_tagged_universal_mr_dyck_node(const char *name)
 {
   mr_dyck_node result = ralloc(mr_dyckregion, struct mr_dyck_node_);
@@ -440,7 +444,7 @@ mr_dyck_node make_tagged_universal_mr_dyck_node(const char *name)
 
   result->node_constant = setif_one();
   result->node_variable = setif_fresh(name);
-  
+
   mr_dyck_node_list_cons(result,mr_all_nodes);
   mr_call_setif_inclusion(result->node_constant, result->node_variable);
 
@@ -452,8 +456,8 @@ void mark_mr_dyck_node_global(mr_dyck_node n)
   n->global = TRUE;
 }
 
-void make_mr_dyck_subtype_edge(mr_dyck_node n1, mr_dyck_node n2) 
-{ 
+void make_mr_dyck_subtype_edge(mr_dyck_node n1, mr_dyck_node n2)
+{
   gen_e exps[1];
 
   assert(state == mr_dyck_inited);
@@ -463,34 +467,34 @@ void make_mr_dyck_subtype_edge(mr_dyck_node n1, mr_dyck_node n2)
   mr_call_setif_inclusion(constructor_expr(mr_s_constructor,exps,1),n1->node_variable);
 }
 
-void make_mr_dyck_open_edge(mr_dyck_node n1, mr_dyck_node n2, int index) 
+void make_mr_dyck_open_edge(mr_dyck_node n1, mr_dyck_node n2, int index)
 {
   gen_e exps[1];
   assert(state == mr_dyck_inited);
- 
+
   exps[0] = n2->node_variable;
-  
+
   mr_call_setif_inclusion(constructor_expr(get_constructor(index,mr_o),
 					   exps, 1), n1->node_variable);
 
   if (pn_reach) {
-    mr_call_setif_inclusion(constructor_expr(mr_n_constructor,exps, 1), 
+    mr_call_setif_inclusion(constructor_expr(mr_n_constructor,exps, 1),
 			    n1->node_variable);
   }
 }
 
-void make_mr_dyck_close_edge(mr_dyck_node n1, mr_dyck_node n2, int index) 
+void make_mr_dyck_close_edge(mr_dyck_node n1, mr_dyck_node n2, int index)
 {
   gen_e exps[1];
   assert(state == mr_dyck_inited);
- 
+
   exps[0] = n2->node_variable;
-  
+
   mr_call_setif_inclusion(constructor_expr(get_constructor(index,mr_c),
 					   exps, 1), n1->node_variable);
 
   if (pn_reach) {
-    mr_call_setif_inclusion(constructor_expr(mr_p_constructor,exps, 1), 
+    mr_call_setif_inclusion(constructor_expr(mr_p_constructor,exps, 1),
 			    n1->node_variable);
   }
 }
@@ -501,7 +505,7 @@ void make_mr_dyck_close_edge(mr_dyck_node n1, mr_dyck_node n2, int index)
  *                                                                           *
  *****************************************************************************/
 
-static void encode_productions(void) 
+static void encode_productions(void)
 {
   mr_dyck_node_list_scanner scan;
   mr_dyck_node next_node;
@@ -512,25 +516,30 @@ static void encode_productions(void)
 
   mr_dyck_node_list_scan(mr_all_nodes,&scan);
 
-  // for each node in the graph 
+  // for each node in the graph
   while (mr_dyck_node_list_next(&scan,&next_node)) {
+    int loop_counter = 0;
     // encode each S -> epsilon production
     make_mr_dyck_subtype_edge(next_node,next_node);
     // encode each S -> S S production
     encode_SSS_production(next_node);
- 
+
     hash_table_scan(mr_seen_indices,&index_scan);
     // for each index i
-    while (hash_table_next(&index_scan,(hash_data *)&next_index,NULL)) {
+    while (hash_table_next(&index_scan, (hash_data *)&next_index, NULL)) {
       // encode each K_i -> (_i S production
       encode_KOS_production(next_node,next_index);
       // encode each S -> K_i )_i production
       encode_SKC_production(next_node,next_index);
       // encode each n --)_i--> n production (on global nodes)
       if (next_node->global) {
-		make_mr_dyck_open_edge(next_node,next_node,next_index);
- 		make_mr_dyck_close_edge(next_node,next_node,next_index);
+	make_mr_dyck_open_edge(next_node,next_node,next_index);
+	make_mr_dyck_close_edge(next_node,next_node,next_index);
       }
+      // for debugging:
+      printf("iteration: %d, scanner at %p, next_index: %d.\n",
+	     loop_counter, &index_scan, next_index);
+      loop_counter++;
     }
   }
 }
@@ -570,12 +579,12 @@ void mr_dyck_finished_adding()
   if (pn_reach) encode_pn_productions();
   else encode_productions();
 
-  //printf("These edges must be present now...\n");
+  printf("These edges must be present now...\n");
   check_erroneous_edges();
   state = mr_dyck_query;
 }
 
-static bool mr_dyck_check_onelevel_reaches(mr_dyck_node n1, mr_dyck_node n2, 
+static bool mr_dyck_check_onelevel_reaches(mr_dyck_node n1, mr_dyck_node n2,
 					   constructor c)
 {
   gen_e_list_scanner scan;
@@ -598,16 +607,16 @@ static bool mr_dyck_check_onelevel_reaches(mr_dyck_node n1, mr_dyck_node n2,
 
       assert(sdecon.arity == 1);
       assert(sdecon.elems);
-      
+
       gen_e_list_scan(contents_tlb,&contents_scan);
-      
+
       while(gen_e_list_next(&contents_scan,&contents_next)) {
 	if (expr_eq(n2->node_constant,contents_next)) return TRUE;
       }
     }
   }
 
-  return FALSE;  
+  return FALSE;
 }
 
 bool mr_dyck_check_reaches(mr_dyck_node n1, mr_dyck_node n2)
@@ -652,17 +661,17 @@ void mr_dyck_print_closed_graph(FILE *f)
 
     while(gen_e_list_next(&scan,&next_lb)) {
       struct decon sdecon = deconstruct_expr(NULL,next_lb);
-      
+
       // Just s constructors
       if (sdecon.arity == 1 && !strcmp(sdecon.name,"s")) {
 	gen_e_list_scanner contents_scan;
 	gen_e contents_next;
 	gen_e_list contents_tlb = setif_tlb(sdecon.elems[0]);
 	gen_e_list_scan(contents_tlb,&contents_scan);
-	
+
 	while(gen_e_list_next(&contents_scan,&contents_next)) {
 	  assert(next_node->node_constant);
-	  
+
 	  if (expr_is_constant(contents_next)) {
 	    fprintf(f,"\"");
 	    expr_print(f,next_node->node_constant);
@@ -670,15 +679,15 @@ void mr_dyck_print_closed_graph(FILE *f)
 	    expr_print(f,contents_next);
 	    fprintf(f,"\" [label=\"%s\"];\n",sdecon.name);
 	  }
-	} 
+	}
       }
 
-	
+
     }
   }
   fprintf(f,"\n}");
 }
-    
+
 
 // Note that node n was at the source end of an erroneous subtype edge
 void add_erroneous_source(mr_dyck_node n)

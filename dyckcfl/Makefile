@@ -28,8 +28,8 @@
 #OS:=$(shell uname)
 
 #ifeq ($(OS), Darwin)
-#	jni_dir = /System/Library/Frameworks/JavaVM.framework/Headers 
-#else 
+#	jni_dir = /System/Library/Frameworks/JavaVM.framework/Headers
+#else
 #	jni_dir = /usr/local/java/include/
 #endif
 
@@ -53,20 +53,26 @@ CC = gcc
 
 ifdef DEBUG
 CFLAGS = -I$(engine_dir) -I$(region_dir) -Ddeletes= -Dtraditional= \
-         -Dsameregion= -Dparentptr= -Wall -g -pg
+         -Dsameregion= -Dparentptr= -Wall -Wextra -Wno-unused-parameter \
+         -Wno-cast-function-type -Wnull-dereference -Wtrampolines -Wempty-body \
+	 -Wlogical-op -Wjump-misses-init -Wduplicated-branches \
+	 -Wduplicated-cond -Og -g -pg
 else
 CFLAGS = -I$(engine_dir) -I$(region_dir) -Ddeletes= -Dtraditional= \
-         -Dsameregion= -Dparentptr= -Wall
+         -Dsameregion= -Dparentptr= -Wall -Wextra -Wno-unused-parameter \
+         -Wno-cast-function-type -Wnull-dereference -Warray-bounds=2 \
+	 -Wtrampolines -Wempty-body -Wlogical-op -Wjump-misses-init \
+	 -Wduplicated-branches -Wduplicated-cond -O1 -ftree-vrp
 endif
 
-.PHONY: clean 
+.PHONY: clean
 
-all: $(TARGETS) 
+all: $(TARGETS)
 
-mr_$(DYCKCFL).o: 
+mr_$(DYCKCFL).o: mr_$(DYCKCFL).c
 	$(CC) -c $(CFLAGS) -DNONSPEC mr_$(DYCKCFL).c
 
-$(DYCKCFL).o:
+$(DYCKCFL).o: $(DYCKCFL).c
 	$(CC) -c $(CFLAGS) -DNONSPEC $(DYCKCFL).c
 
 $(DYCKCFL)_terms.h: $(DYCKCFL)_terms.bsp
@@ -86,4 +92,4 @@ TAGS: $(TAGFILES)
 #	$(CC) -dynamiclib -o libjdyckcfl.jnilib dyckcfl.o JDyckCFLImp.o $(engine_dir)/libnsengine.a $(region_dir)/libregions.a -framework JavaVM
 
 clean:
-	rm -f $(TARGETS) *~ JDyckCFL.class JDyckCFLImp.o libjdyckcfl.jnilib 
+	rm -f $(TARGETS) *~ JDyckCFL.class JDyckCFLImp.o libjdyckcfl.jnilib

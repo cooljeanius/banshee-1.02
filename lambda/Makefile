@@ -38,7 +38,7 @@ BANSHEE = $(banshee_bindir)/banshee.exe
 
 LAMBDA = lambda
 
-TARGETS =  $(LAMBDA).h $(LAMBDA).c $(LAMBDA).o 
+TARGETS =  $(LAMBDA).h $(LAMBDA).c $(LAMBDA).o
 
 TAGFILES = $(LAMBDA).h $(LAMBDA).c
 
@@ -59,17 +59,17 @@ all: $(TARGETS)
 
 $(LAMBDA).c: $(LAMBDA).bsp $(BANSHEE)
 	$(BANSHEE) $(LAMBDA).bsp $(LAMBDA)
-	indent -npsl $@ 
+	indent -npsl $@
 
 $(LAMBDA).h: $(LAMBDA).c
-	indent -npsl $@ 
+	indent -npsl $@
 
 TAGS: $(TAGFILES)
 	etags $(TAGFILES)
 
 # build banshee if necessary
-$(BANSHEE): 
+$(BANSHEE):
 	$(MAKE) -C ../ banshee
 
 clean:
-	rm -f $(TARGETS) *~ *BAK	
+	rm -f $(TARGETS) *~ *BAK

@@ -1,4 +1,4 @@
-/*
+/* engine/nonspec.c
  * Copyright (c) 2000-2004
  *      The Regents of the University of California.  All rights reserved.
  *
@@ -36,7 +36,7 @@
   for induced inclusions/equations, no sort checks are necessary.
   the invariant is that the non-induced relations are ONLY called from the
   toplevel. induced functions must have the signature
-  gen_e * gen_e -> void 
+  gen_e * gen_e -> void
   which means they can be passed as function pointers (incl_fn_ptr)
  */
 
@@ -65,7 +65,7 @@
 /* Update this whenever a new term type is defined. It MUST be even. */
 #define NUM_EXTRA_TYPES 4
 
-typedef enum 
+typedef enum
 {
   vnc_pos,
   vnc_neg,
@@ -82,7 +82,7 @@ typedef struct sig_elt_ sig_elt;
 
 typedef sig_elt* sig_elt_ptr;
 
-struct cons_group_ 
+struct cons_group_
 {
   int arity;
   char *name;
@@ -115,7 +115,7 @@ struct gconstructor_
   int arity;
   char *name;
   sig_elt *sig;
-  cons_group g;	
+  cons_group g;
   int index;
 };
 
@@ -143,7 +143,7 @@ typedef struct gproj_pat_
   cons_group g;
 } *gproj_pat;
 
-typedef struct cons_expr_  
+typedef struct cons_expr_
 {
   sort_kind sort;
   int type;
@@ -200,7 +200,7 @@ static int new_type()
   next_type += 2;
   return ret;
 }
-		
+
 // A sort is fixed if it does not permit user-defined constructors
 static bool fixed_sort(sort_kind s)
 {
@@ -228,7 +228,7 @@ static bool setif_is_gpat(gen_e e)
   return type == GROUP_PROJ_PAT_TYPE;
 }
 
-/* 
+/*
    Convention : constructor types are even, pats are odd.
    The smallest specialized type is smallest_special_type.
 */
@@ -265,11 +265,11 @@ static bool setif_is_cons_expr(gen_e e)
   int type = ((setif_term)e)->type;
   return type_is_cons_expr(type);
 }
- 
+
 static bool setst_is_cons_expr(gen_e e)
 {
   int type = ((setst_term)e)->type;
- 
+
   return ( !(type % 2) && (type >= smallest_special_type) );
 }
 
@@ -347,14 +347,14 @@ static gen_e get_named_proj_var(sort_kind s, bool large, char *name) /* HACK */
       {
 	if (large)
 	  return (gen_e)setif_fresh_large(name);
-	else return (gen_e)setif_fresh(name);	  
+	else return (gen_e)setif_fresh(name);
       }
       break;
     case setst_sort:
       {
 	if (large)
 	  return (gen_e)setst_fresh_large(name);
-	else return (gen_e)setst_fresh(name);	
+	else return (gen_e)setst_fresh(name);
       }
       break;
     case flowrow_sort:
@@ -369,7 +369,7 @@ static gen_e get_named_proj_var(sort_kind s, bool large, char *name) /* HACK */
 	if (large)
 	  return (gen_e)term_fresh_large(name);
 	else return (gen_e)term_fresh(name);
-      }	
+      }
       break;
     default:
       {
@@ -459,7 +459,7 @@ constructor make_constructor(const char *name,sort_kind sort, sig_elt s[],
 {
   constructor c = ralloc(constructor_region,struct constructor_);
   sig_elt *sig = rarrayalloc(banshee_nonptr_region,arity,sig_elt);
-  
+
   c->type = new_type();
 
   if (arity) {
@@ -468,7 +468,7 @@ constructor make_constructor(const char *name,sort_kind sort, sig_elt s[],
 
   if ( fixed_sort(sort) )
     fail("Specified sort does not allow constructor types\n");
-  
+
   c->sort = sort;
   c->arity = arity;
   c->name = rstrdup(banshee_nonptr_region,name);
@@ -492,7 +492,7 @@ constructor make_constructor_from_list(const char*name, sort_kind sort,
   int arity = sig_elt_list_length(elts);
   constructor c = ralloc(constructor_region,struct constructor_);
   sig_elt *sig = rarrayalloc(banshee_nonptr_region,arity,sig_elt);
-  
+
   sig_elt_list_scan(elts,&scan);
 
   while(sig_elt_list_next(&scan,&temp)) {
@@ -507,7 +507,7 @@ constructor make_constructor_from_list(const char*name, sort_kind sort,
   c->type = new_type();
   c->g = NULL;
 /*
-  if (sort == setif_sort) { 
+  if (sort == setif_sort) {
     c->groups = new_persistent_cons_group_list();
   }
   else c->groups = NULL;
@@ -521,10 +521,10 @@ gen_e constructor_expr(constructor c, gen_e exps[], int arity)
   int i;
   get_stamp_fn_ptr get_stamp;
   term_hash sort_hash = get_sort_hash(c->sort);
-  
+
   stamp *st = rarrayalloc(banshee_nonptr_region,arity + 1,stamp);
   st[0] = c->type;
-  
+
   // Dynamic arity check
   if(arity != c->arity)
     {
@@ -544,17 +544,17 @@ gen_e constructor_expr(constructor c, gen_e exps[], int arity)
     }
 
   // Hash-consing of terms
-  if (!(result = (cons_expr)term_hash_find(sort_hash,st,arity+1)) 
+  if (!(result = (cons_expr)term_hash_find(sort_hash,st,arity+1))
       || arity == 0 )
     {
       gen_e *e = rarrayalloc(banshee_ptr_region,arity,gen_e);
-      
+
       if (arity)
 	memcpy(e,exps,sizeof(gen_e)*arity);
-      else 
+      else
 	e = NULL;
 
-      result = ralloc(cons_expr_region,struct cons_expr_);  
+      result = ralloc(cons_expr_region,struct cons_expr_);
       result->type = st[0];
       result->st = stamp_fresh();
       result->sort = c->sort;
@@ -563,7 +563,7 @@ gen_e constructor_expr(constructor c, gen_e exps[], int arity)
       result->sig = c->sig;
       result->exps = e;
       result->c = c;
-      
+
       term_hash_insert(sort_hash,(gen_e)result,st,arity+1);
     }
 
@@ -581,7 +581,7 @@ static gen_e make_proj_pat(constructor c, int i, gen_e e)
   proj_pat pat;
   term_hash sort_hash = get_sort_hash(e->sort);
   get_stamp_fn_ptr get_stamp = get_sort_stamp(e->sort);
-  
+
   stamp s[3];
   s[0] = c->type + 1;
   s[1] = get_stamp(e);
@@ -599,7 +599,7 @@ static gen_e make_proj_pat(constructor c, int i, gen_e e)
       pat->i = i;
       term_hash_insert(sort_hash,(gen_e)pat,s,3);
     }
-  
+
   return (gen_e)pat;
 }
 
@@ -631,7 +631,7 @@ static gen_e nonspec_get_proj(gen_e_list arg1)
       proj_pat pat;
       gen_e_list_scanner scan;
       gen_e temp;
-      
+
       gen_e_list_scan(arg1,&scan);
       while (gen_e_list_next(&scan,&temp))
 	{
@@ -644,7 +644,7 @@ static gen_e nonspec_get_proj(gen_e_list arg1)
     }
 
 /* for proj, sort(e) must be setif */
-gen_e setif_proj(constructor c, int i, gen_e e) 
+gen_e setif_proj(constructor c, int i, gen_e e)
 {
   setif_var v;
   gen_e proj_var, proj;
@@ -659,7 +659,7 @@ gen_e setif_proj(constructor c, int i, gen_e e)
       fail("Sort check failed: setif_proj\n");
       return NULL;
     }
-  
+
   else if (i < 0 || i >= c->arity)
     {
       fail("Signature mismatch\n");
@@ -670,13 +670,13 @@ gen_e setif_proj(constructor c, int i, gen_e e)
     {
       return get_sort_zero(c->sig[i].sort);
     }
-  
+
   else if ( ((setif_term)e)->type == c->type )
     {
       cons_expr constructed = (cons_expr)e;
       return constructed->exps[i];
     }
-  
+
   else if (setif_is_var(e))
     {
       v = (setif_var)e;
@@ -718,14 +718,14 @@ gen_e setif_proj(constructor c, int i, gen_e e)
 	  // proj_var = get_proj_var(c->sig[i].sort,FALSE);
 	  proj_var = get_cinv_proj_var(c->sig[i].sort,c,i);
 	  pat = setif_proj_pat(c,i,proj_var);
-	  
+
 	  setif_set_proj_cache(e,pat);
-	  
+
 	  setif_inclusion_ind(e,pat);
 	  return proj_var;
 	}
     }
-  else 
+  else
     {
       gen_e pat;
       //     proj_var = get_proj_var(c->sig[i].sort,FALSE);
@@ -754,14 +754,14 @@ static bool type_match(cons_expr c1, cons_expr c2) {
 
 static void setif_con_match(gen_e e1, gen_e e2)
 {
-   // case where e1 is a gcons expr 
-   if (setif_is_gcons_expr(e1) && setif_is_pat(e2) && 
+   // case where e1 is a gcons expr
+   if (setif_is_gcons_expr(e1) && setif_is_pat(e2) &&
        gcons_match((gcons_expr)e1,(proj_pat)e2) ) {
 		gcons_expr gc = (gcons_expr)e1;
 		proj_pat p = (proj_pat)e2;
 		int i = p->i;
 		assert(i < gc->g->arity);
-		
+
 		if (gc->g->sig[i].variance == vnc_pos) {
 			call_inclusion_ind(gc->exps[i], p->exp);
 		}
@@ -771,7 +771,7 @@ static void setif_con_match(gen_e e1, gen_e e2)
 		else call_unify_ind(gc->exps[i], p->exp);
  	}
    // and e2 is a gproj pat
-   else if (setif_is_gcons_expr(e1) && setif_is_gpat(e2) && 
+   else if (setif_is_gcons_expr(e1) && setif_is_gpat(e2) &&
        gcons_gpat_match((gcons_expr)e1, (gproj_pat)e2)) {
 	  	gcons_expr gc = (gcons_expr)e1;
 	    gproj_pat p = (gproj_pat)e2;
@@ -823,9 +823,9 @@ static void setif_con_match(gen_e e1, gen_e e2)
 		    }
 		}
 	}
-	
+
   // Case where e1 is a constructor expression and e2 is a gproj_pat
-  else if (setif_is_cons_expr(e1) && setif_is_gpat(e2) && 
+  else if (setif_is_cons_expr(e1) && setif_is_gpat(e2) &&
       gpat_match((cons_expr)e1, (gproj_pat)e2) ) {
     cons_expr c = (cons_expr)e1;
     gproj_pat p = (gproj_pat)e2;
@@ -838,7 +838,7 @@ static void setif_con_match(gen_e e1, gen_e e2)
     // should they be created?
     if (i == -1) {
       int j;
-      
+
       for (j = 0; j < c->arity; j++) {
 	if (c->sig[j].variance == vnc_pos)
 	  call_inclusion_ind(c->exps[j],p->exp);
@@ -866,7 +866,7 @@ static void setif_con_match(gen_e e1, gen_e e2)
       cons_expr c = (cons_expr)e1;
       proj_pat p = (proj_pat)e2;
       int i = p->i;
-      
+
       if (c->sig[i].variance == vnc_pos)
 	call_inclusion_ind(c->exps[i],p->exp);
       else if (c->sig[i].variance == vnc_neg)
@@ -878,13 +878,13 @@ static void setif_con_match(gen_e e1, gen_e e2)
     {
       return;
     }
-  
+
   // Case where e1 and e2 are constructor expressions
-  else 
+  else
     {
       cons_expr c1 = (cons_expr)e1,
 	c2 = (cons_expr)e2;
-      
+
       if (!type_match(c1,c2))
 	{
 	  handle_error(e1,e2,bek_cons_mismatch);
@@ -901,9 +901,9 @@ static void setif_con_match(gen_e e1, gen_e e2)
 	      else
 		call_unify_ind(c1->exps[i],c2->exps[i]);
 	    }
-	  
+
 	}
-    } 
+    }
 }
 
 
@@ -915,7 +915,7 @@ static void setst_con_match(gen_e e1, gen_e e2)
       cons_expr c = (cons_expr)e1;
       proj_pat p = (proj_pat)e2;
       int i = p->i;
-      
+
       if (c->sig[i].variance == vnc_pos)
 	call_inclusion_ind(c->exps[i],p->exp);
       else if (c->sig[i].variance == vnc_neg)
@@ -923,17 +923,17 @@ static void setst_con_match(gen_e e1, gen_e e2)
       else
 	call_unify_ind(c->exps[i],p->exp);
     }
-  else if (setst_is_pat(e2)) 
+  else if (setst_is_pat(e2))
     {
       return;
     }
-  
+
   // Case where e1 and e2 are constructor expressions
-  else 
+  else
     {
       cons_expr c1 = (cons_expr)e1,
 	c2 = (cons_expr)e2;
-      
+
       if (c1->type != c2->type)
 	{
 	  handle_error(e1,e2,bek_cons_mismatch);
@@ -950,9 +950,9 @@ static void setst_con_match(gen_e e1, gen_e e2)
 	      else
 		call_unify_ind(e1,e2);
 	    }
-	  
+
 	}
-    } 
+    }
 }
 
 
@@ -972,7 +972,7 @@ static  gen_e setif_get_proj(gen_e_list arg1)
 	{
 		if (!setif_is_pat(temp)) continue;
 		pat = (proj_pat)temp;
-		if ( pat->type == rp_type && 
+		if ( pat->type == rp_type &&
 			pat->i == rp_i)
 			return pat->exp;
 	}
@@ -998,13 +998,13 @@ static gen_e proj_con(gen_e e)
 static bool setif_res_proj(setif_var v1, gen_e e2)
 {
   if (setif_is_pat(e2) ) {
-    proj_pat projection_pat = (proj_pat)e2; 
+    proj_pat projection_pat = (proj_pat)e2;
 	incl_fn_ptr sort_inclusion;
 	rp_c = projection_pat->c;
 	rp_i = projection_pat->i;
 	rp_s = projection_pat->exp->sort;
 	rp_type = projection_pat->type;
-	
+
 	if (projection_pat->variance == vnc_pos) {
 		sort_inclusion = call_inclusion_ind;
 	}
@@ -1014,7 +1014,7 @@ static bool setif_res_proj(setif_var v1, gen_e e2)
 	else {
 		sort_inclusion = call_unify_ind;
 	}
-  
+
     return setif_proj_merge(v1,((proj_pat)e2)->exp,
 			    setif_get_proj, proj_con,
 			    fresh_large,sort_inclusion,
@@ -1035,7 +1035,7 @@ flowrow_field flowrow_make_field(const char *name, gen_e e)
 gen_e flowrow_make_row(flowrow_map fields, gen_e rest)
 {
   get_stamp_fn_ptr get_stamp = get_sort_stamp(flowrow_base_sort(rest));
-  
+
   return flowrow_row(get_stamp,fields,rest);
 }
 
@@ -1056,7 +1056,7 @@ int call_setif_inclusion(gen_e e1,gen_e e2)
 
 /* Does a sort check */
 int call_setif_unify(gen_e e1, gen_e e2)
-{  
+{
   banshee_clock_tick();
 
   if (! ( (e1->sort == e2->sort) && (e1->sort == setif_sort) ) )
@@ -1078,7 +1078,7 @@ int call_setst_inclusion(gen_e e1, gen_e e2)
     {
       fail("Sort check failed: setif_inclusion\n");
     }
-  
+
   setst_inclusion(setst_con_match,expr_print,e1,e2);
   return 0;
 }
@@ -1087,7 +1087,7 @@ int call_setst_inclusion(gen_e e1, gen_e e2)
 int call_setst_unify(gen_e e1, gen_e e2)
 {
   banshee_clock_tick();
-  
+
   if (! ( (e1->sort == e2->sort) && (e1->sort == setst_sort) ) )
     {
       fail("Sort check failed: setst_unify\n");
@@ -1150,7 +1150,7 @@ static void flowrow_inclusion_ind(gen_e e1, gen_e e2)
 
 /* Does a sort check */
 int call_flowrow_inclusion(gen_e e1,gen_e e2)
-{  
+{
   banshee_clock_tick();
 
   if ( (e1->sort != flowrow_sort) || (e2->sort != flowrow_sort) )
@@ -1162,7 +1162,7 @@ int call_flowrow_inclusion(gen_e e1,gen_e e2)
       fail("Base sort check failed: flowrow_inclusion\n");
     }
 
-  
+
   flowrow_inclusion_ind(e1,e2);
   return 0;
 }
@@ -1171,7 +1171,7 @@ int call_flowrow_inclusion(gen_e e1,gen_e e2)
 int call_flowrow_unify(gen_e e1, gen_e e2)
 {
   banshee_clock_tick();
-  
+
   if ( (e1->sort != flowrow_sort) || (e2->sort != flowrow_sort) )
     {
       fail("Sort check failed: flowrow_inclusion\n");
@@ -1190,7 +1190,7 @@ static void term_con_match(gen_e e1, gen_e e2)
 {
   cons_expr c1 = (cons_expr)e1,
     c2 = (cons_expr)e2;
-  
+
   if (c1->type != c2->type)
     {
       handle_error(e1,e2,bek_cons_mismatch);
@@ -1202,14 +1202,14 @@ static void term_con_match(gen_e e1, gen_e e2)
 	{
 	  call_unify_ind(c1->exps[i],c2->exps[i]);
 	}
-      
+
     }
 }
 
 static bool term_occurs(term_var v, gen_e e)
 {
   gen_e ecr = term_get_ecr(e);
-  
+
   if (((gen_term)ecr)->type == VAR_TYPE)
     return ( term_get_stamp((gen_e)v) == term_get_stamp(e) );
 
@@ -1223,7 +1223,7 @@ static bool term_occurs(term_var v, gen_e e)
 	    return TRUE;
 	}
     }
-  
+
   return FALSE;
 }
 
@@ -1231,7 +1231,7 @@ static bool term_occurs(term_var v, gen_e e)
 int call_term_unify(gen_e e1, gen_e e2)
 {
   banshee_clock_tick();
-  
+
   if ( (e1->sort != term_sort) || (e2->sort != term_sort) )
     {
       fail("Sort check failed: term_unify\n");
@@ -1244,7 +1244,7 @@ int call_term_unify(gen_e e1, gen_e e2)
 int call_term_cunify(gen_e e1, gen_e e2)
 {
   banshee_clock_tick();
-  
+
   if ( (e1->sort != term_sort) || (e2->sort != term_sort) )
     {
       fail("Sort check failed: term_unify\n");
@@ -1273,7 +1273,7 @@ static void call_inclusion_ind(gen_e e1, gen_e e2)
     case term_sort:
       {
 	term_unify(term_con_match,term_occurs,e1,e2);
-      }    
+      }
       break;
     case flowrow_sort:
       {
@@ -1307,7 +1307,7 @@ static void call_unify_ind(gen_e e1, gen_e e2)
     case term_sort:
       {
 	term_unify(term_con_match,term_occurs,e1,e2);
-      }    
+      }
       break;
     case flowrow_sort:
       {
@@ -1361,7 +1361,7 @@ static struct decon deconstruct_expr_aux(constructor c,gen_e e)
       break;
     case term_sort:
       {
-	if ( term_is_cons_expr(e) && 
+	if ( term_is_cons_expr(e) &&
 	     check_cons_match(c, ((gen_term)term_get_ecr(e))->type) )
 	  {
 	    cons_expr ce = (cons_expr)term_get_ecr(e);
@@ -1379,7 +1379,7 @@ static struct decon deconstruct_expr_aux(constructor c,gen_e e)
 	goto NONE;
       }
     }
-  
+
  NONE:
   return (struct decon){NULL,-1,NULL}; // FIX : is it ok to have changed this to -1??
 }
@@ -1573,7 +1573,7 @@ void expr_print(FILE *f,gen_e e)
 	  {
 	    pat_print(f,(proj_pat)e);
 	  }
-	else if (setif_is_gpat(e)) 
+	else if (setif_is_gpat(e))
 	  {
 	    gpat_print(f,(gproj_pat)e);
 	  }
@@ -1589,7 +1589,7 @@ void expr_print(FILE *f,gen_e e)
 	  {
 	    fprintf(f,"%s",setif_get_constant_name(e));
 	  }
-	else 
+	else
 	  {
 	    assert(setif_is_cons_expr(e));
 	    cons_expr_print(f,(cons_expr)e);
@@ -1622,7 +1622,7 @@ void expr_print(FILE *f,gen_e e)
 	  {
 	    setst_inter_print(f,e);
 	  }
-	else 
+	else
 	  {
 	    cons_expr_print(f,(cons_expr)e);
 	  }
@@ -1643,11 +1643,11 @@ void expr_print(FILE *f,gen_e e)
 	  {
 	    fprintf(f,"1");
 	  }
-	else if (term_is_constant(ecr)) 
+	else if (term_is_constant(ecr))
 	  {
 	    fprintf(f,"%s",term_get_constant_name(ecr));
 	  }
-	else 
+	else
 	  {
 	    cons_expr_print(f,(cons_expr)ecr);
 	  }
@@ -1727,12 +1727,12 @@ cons_group make_cons_group(const char *name, sig_elt s[], int arity)
   static int next_gid = 0;
   cons_group g = ralloc(cons_group_region, struct cons_group_);
   sig_elt *sig = NULL;
-  
+
   if (arity > 0) {
     sig = rarrayalloc(banshee_nonptr_region, arity, sig_elt);
     memcpy(sig,s,sizeof(sig_elt)*arity);
   }
-  
+
   g->arity = arity;
   g->name = rstrdup(banshee_nonptr_region,name);
   g->sig = sig;
@@ -1767,15 +1767,15 @@ void cons_group_add(cons_group g, constructor c)
 {
   int i;
   if (c->sort != setif_sort) {
-    fail("Attempted to add %s to group %s, but %s is not a setif constructor", 
-	 c->name, g->name); 
+    fail("Attempted to add %s to group %s, but %s is not a setif constructor",
+	 c->name, g->name);
   }
 
   if (c->arity != g->arity && g->arity != -1) {
     fail("Attempted to add %s to group %s, but there was an arity mismatch",
 	 c->name, g->name);
   }
-  
+
   if (g->arity != -1) {
     for (i = 0; i < c->arity; i++) {
       if (g->sig[i].variance != c->sig[i].variance || g->sig[i].sort != c->sig[i].sort) {
@@ -1821,7 +1821,7 @@ static gen_e make_group_cons_expr(cons_group g, gen_e *exps, int arity) {
     }
 
   // Hash-consing of terms
-  if (!(result = (gcons_expr)term_hash_find(sort_hash,st,arity+2)) 
+  if (!(result = (gcons_expr)term_hash_find(sort_hash,st,arity+2))
       || arity == 0 )
     {
       gen_e *e = rarrayalloc(banshee_ptr_region,arity,gen_e);
@@ -1829,7 +1829,7 @@ static gen_e make_group_cons_expr(cons_group g, gen_e *exps, int arity) {
       if (arity) memcpy(e,exps,sizeof(gen_e)*arity);
       else e = NULL;
 
-      result = ralloc(cons_expr_region,struct gcons_expr_);  
+      result = ralloc(cons_expr_region,struct gcons_expr_);
       result->type = st[0];
       result->st = stamp_fresh();
       // TODO don't hardcode the sort
@@ -1853,7 +1853,7 @@ static gen_e make_group_proj_pat(cons_group g, int i, gen_e e)
   gproj_pat pat;
   term_hash sort_hash = get_sort_hash(e->sort);
   get_stamp_fn_ptr get_stamp = get_sort_stamp(e->sort);
-  
+
   stamp s[4];
   s[0] = GROUP_PROJ_PAT_TYPE;
   s[1] = g->gid;
@@ -1874,7 +1874,7 @@ static gen_e make_group_proj_pat(cons_group g, int i, gen_e e)
       pat->i = i;
       term_hash_insert(sort_hash,(gen_e)pat,s,4);
     }
-  
+
   return (gen_e)pat;
 }
 
@@ -1883,7 +1883,7 @@ gen_e setif_group_proj_pat(cons_group g, int i, gen_e e)
   return make_group_proj_pat(g,i,e);
 }
 
-int call_sort_inclusion(gen_e e1, gen_e e2) 
+int call_sort_inclusion(gen_e e1, gen_e e2)
 {
   if (e1->sort != e2->sort)
     {
@@ -1905,7 +1905,7 @@ int call_sort_inclusion(gen_e e1, gen_e e2)
     case term_sort:
       {
 	call_term_unify(e1,e2);
-      }    
+      }
       break;
     case flowrow_sort:
       {
@@ -1941,7 +1941,7 @@ if (e1->sort != e2->sort)
     case term_sort:
       {
 	call_term_unify(e1,e2);
-      }    
+      }
       break;
     case flowrow_sort:
       {
@@ -1964,7 +1964,7 @@ bool cons_group_serialize(FILE *f, void *obj)
   string_data_serialize(f,g->name);
   fwrite((void *)g->sig, sizeof(sig_elt), g->arity, f);
   fwrite((void *)&g->gid, sizeof(int), 1, f);
-  
+
   return TRUE;
 }
 
@@ -2014,7 +2014,7 @@ static void *setif_proj_pat_deserialize(FILE *f)
   fread((void *)&pat->exp, sizeof(void *), 1, f);
   fread((void *)&pat->variance, sizeof(int), 1, f);
   fread((void *)&pat->c, sizeof(constructor), 1, f);
-  
+
   return pat;
 }
 
@@ -2133,7 +2133,7 @@ static bool setif_expr_serialize(FILE *f, gen_e e)
     {
       return setif_proj_pat_serialize(f, (proj_pat)e);
     }
-  else if (setif_is_gpat(e)) 
+  else if (setif_is_gpat(e))
     {
       return setif_gproj_pat_serialize(f, (gproj_pat)e);
     }
@@ -2149,7 +2149,7 @@ static bool setif_expr_serialize(FILE *f, gen_e e)
     {
       return setif_constant_serialize(f, e);
     }
-  else 
+  else
     {
       assert(setif_is_cons_expr(e));
       return cons_expr_serialize(f, (cons_expr) e);
@@ -2164,7 +2164,7 @@ static void *setif_expr_deserialize(FILE *f)
   assert(f);
   fread((void *)&expr_type, sizeof(int), 1, f);
 
-  switch(expr_type) 
+  switch(expr_type)
     {
     case VAR_TYPE:
       result = setif_var_deserialize(f);
@@ -2191,6 +2191,7 @@ static void *setif_expr_deserialize(FILE *f)
     case GROUP_PROJ_PAT_TYPE:
       result = setif_gproj_pat_deserialize(f);
       result->type = expr_type;
+      break; /* guessing this was intended; for -Wimplicit-fallthrough */
     default:
       if (type_is_pat(expr_type)) {
 	result = setif_proj_pat_deserialize(f);
@@ -2227,7 +2228,7 @@ static bool setif_expr_set_fields(void *obj)
     {
       return setif_proj_pat_set_fields((proj_pat)e);
     }
-  else if (setif_is_gpat(e)) 
+  else if (setif_is_gpat(e))
     {
       return setif_gproj_pat_set_fields((gproj_pat)e);
     }
@@ -2243,7 +2244,7 @@ static bool setif_expr_set_fields(void *obj)
     {
       return setif_constant_set_fields(e);
     }
-  else 
+  else
     {
       assert(setif_is_cons_expr(e));
       return cons_expr_set_fields((cons_expr)e);
@@ -2287,11 +2288,11 @@ static bool term_expr_serialize(FILE *f, gen_e e)
     {
       return term_constant_serialize(f,e);
     }
-  else 
+  else
     {
       return cons_expr_serialize(f, (cons_expr)e);
     }
-  
+
   return TRUE;
 }
 
@@ -2301,7 +2302,7 @@ static void *term_expr_deserialize(FILE *f)
   gen_term result = NULL;
   fread((void *)&expr_type, sizeof(int), 1, f);
 
-  switch(expr_type) 
+  switch(expr_type)
     {
     case VAR_TYPE:
       result = term_var_deserialize(f);
@@ -2346,11 +2347,11 @@ static bool term_expr_set_fields(void *obj)
     {
       return TRUE;
     }
-  else 
+  else
     {
       return cons_expr_set_fields((cons_expr)e);
     }
-  
+
   return TRUE;
 }
 
@@ -2385,7 +2386,7 @@ void *gen_e_deserialize(FILE *f)
 
   fread((void *)&sort, sizeof(int), 1, f);
 
-  switch(sort) 
+  switch(sort)
     {
     case setif_sort:
       result = setif_expr_deserialize(f);
@@ -2403,8 +2404,11 @@ void *gen_e_deserialize(FILE *f)
       fail("Unknown sort in gen_e deserialize.\n");
       return NULL;
     }
-  
-  result->sort = sort;
+
+  if (result != NULL)
+    result->sort = sort;
+  else
+    (void)sort;
   return result;
 }
 
@@ -2460,7 +2464,7 @@ bool constructor_set_fields(void *obj)
   return TRUE;
 }
 
-void serialize_cs(FILE *f, hash_table *entry_points, 
+void serialize_cs(FILE *f, hash_table *entry_points,
 		  unsigned long sz)
 {
   unsigned long i;
@@ -2490,7 +2494,7 @@ void serialize_cs(FILE *f, hash_table *entry_points,
   term_serialize(f);
 
   banshee_serialize_end();
-  
+
   /* Finally, close the file */
   fclose(f);
 }
@@ -2511,7 +2515,7 @@ void write_module_nonspec(FILE *f)
 void update_module_nonspec(translation t, FILE *f)
 {
   assert(f);
-  
+
   /* Reset the constraint solver */
   //engine_reset();
 
@@ -2561,7 +2565,7 @@ hash_table *deserialize_cs(FILE *f)
   for (i = 0; i < sz; i++) {
     deserialize_set_obj((void **)&entry_points[i]);
   }
-  
+
   /* Call set_fields on each module */
   engine_set_fields();
   stamp_set_fields();
@@ -2573,7 +2577,7 @@ hash_table *deserialize_cs(FILE *f)
 
   /* Finally, close the file */
   fclose(f);
-  
+
   banshee_deserialize_end();
 
   return entry_points;
@@ -2602,7 +2606,7 @@ int update_cons_group(translation t, void *m)
 int update_proj_pat(translation t, void *m)
 {
   proj_pat p = (proj_pat)m;
-  
+
   update_pointer(t, (void **)&p->exp);
   update_pointer(t, (void **)&p->c);
 
@@ -2612,7 +2616,7 @@ int update_proj_pat(translation t, void *m)
 int update_gproj_pat(translation t, void *m)
 {
   gproj_pat g = (gproj_pat)m;
-  
+
   update_pointer(t, (void **)&g->exp);
   update_pointer(t, (void **)&g->g);
 

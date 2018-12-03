@@ -130,6 +130,9 @@ clean:
 	$(MAKE) -C java clean
 	rm -rf *~ data statics offsets extras banshee*.tar.gz
 
+distclean: clean
+maintainer-clean: distclean
+
 distrib: clean docs
 	rm -rf $(DISTRIB_DIR)
 	mkdir $(DISTRIB_DIR)

@@ -41,7 +41,7 @@ COR_PERSIST_DIR := ./test.ibc.cor/persist
 IBC_RPERSIST_DIR := ./test.ibc/rpersist
 COR_RPERSIST_DIR := ./test.ibc.cor/rpersist
 
-IBANSHEE_TESTS := 
+IBANSHEE_TESTS :=
 IBANSHEE_TESTS += cons_def.ibc
 IBANSHEE_TESTS += cons_def2.ibc
 IBANSHEE_TESTS += row_norm.ibc
@@ -50,7 +50,7 @@ IBANSHEE_TESTS += trans.ibc
 IBANSHEE_TESTS += trans2.ibc
 IBANSHEE_TESTS += row_flow.ibc
 
-IBANSHEE_BT_TESTS := 
+IBANSHEE_BT_TESTS :=
 IBANSHEE_BT_TESTS += simple.ibc
 
 IBANSHEE_PERSIST_TESTS :=
@@ -65,7 +65,7 @@ IBANSHEE_EXEC := $(IBANSHEE_DIR)/ibanshee.exe
 
 .PHONY: ibanshee-regr
 ibanshee-regr:  $(IBANSHEE_EXEC) ibanshee-regr/clean \
-           $(patsubst %,ibanshee-tests/%,$(IBANSHEE_TESTS)) ibanshee-done 
+           $(patsubst %,ibanshee-tests/%,$(IBANSHEE_TESTS)) ibanshee-done
 
 ibanshee-bt: $(IBANSHEE_EXEC) ibanshee-bt/clean \
 	$(patsubst %,ibanshee-bt-tests/%,$(IBANSHEE_BT_TESTS)) ibanshee-bt-done
@@ -116,7 +116,7 @@ ibanshee-rpersist-tests/%:
 	$(IBANSHEE_EXEC) -f $(IBC_RPERSIST_DIR)/$*_load.ibc > $(IBC_RPERSIST_DIR)/$*_load.ibc.out
 	diff $(COR_RPERSIST_DIR)/$*.cor $(IBC_RPERSIST_DIR)/$*_load.ibc.out
 
-$(IBANSHEE_DIR)/ibanshee.exe: 
+$(IBANSHEE_DIR)/ibanshee.exe:
 	$(MAKE) -C ../ ibanshee
 
-clean: ibanshee-regr/clean ibanshee-bt/clean ibanshee-persist/clean ibanshee-rpersist/clean 
+clean: ibanshee-regr/clean ibanshee-bt/clean ibanshee-persist/clean ibanshee-rpersist/clean

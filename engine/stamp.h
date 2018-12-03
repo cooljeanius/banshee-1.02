@@ -38,7 +38,7 @@
 
 EXTERN_C_BEGIN
 
-typedef int stamp;
+typedef int stamp; /* want to go w/intptr_t, but that breaks generated code */
 
 DECLARE_LIST(stamp_list,stamp);
 
@@ -58,7 +58,7 @@ void stamp_deserialize(FILE *f);
 void stamp_set_fields(void);
 
 /* Taken from here: http://www.concentric.net/~Ttwang/tech/inthash.htm  */
-unsigned long stamp_hash(void *key); 
+unsigned long stamp_hash(void *key);
 
 bool stamp_eq(void *s1, void *s2);
 

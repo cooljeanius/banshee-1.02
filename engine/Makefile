@@ -43,7 +43,10 @@ region_dir = ../libcompat
 CC = gcc
 
 CFLAGS = -I. -I$(region_dir) -Ddeletes= -Dtraditional= -Dsameregion= \
-	 -Dparentptr= -Wall -fno-strict-aliasing -fno-common
+	 -Dparentptr= -Wall -Wextra -Wno-unused-parameter -Wnull-dereference \
+	 -Warray-bounds=2 -Wtrampolines -Wempty-body -Wlogical-op \
+	 -Wjump-misses-init -Wduplicated-branches -Wduplicated-cond -Og \
+	 -ftree-vrp -g -fno-strict-aliasing -fno-common
 
 ifndef NO_BANSHEE_ROLLBACK
 CFLAGS := -DBANSHEE_ROLLBACK ${CFLAGS}
@@ -65,7 +68,7 @@ NSOBJS = $(patsubst %.o,%.ns.o,$(AOBJS))
 
 #TAGFILES = $(wildcard *.c) $(wildcard *.h)
 
-TARGETS = libengine.a libnsengine.a 
+TARGETS = libengine.a libnsengine.a
 
 ifdef DEBUG
 CFLAGS := -pg -g ${CFLAGS}
@@ -73,7 +76,7 @@ else
 CFLAGS := -DNDEBUG -O3 ${CFLAGS}
 endif
 
-all: $(TARGETS) 
+all: $(TARGETS)
 
 libengine.a: $(OBJS)
 	@echo $(OBJS)
@@ -81,7 +84,7 @@ libengine.a: $(OBJS)
 	$(CC) -c $(CFLAGS) fn_ptrs.c -o fn_ptrs.o
 	$(AR) rcs $@ $^ fn_ptrs.o
 
-libnsengine.a: $(NSOBJS) 
+libnsengine.a: $(NSOBJS)
 	@echo $(NSOBJS)
 	../bin/build_funptr_table.py $(NSOBJS) > fn_ptrs.ns.c
 	$(CC) -c $(CFLAGS) fn_ptrs.ns.c -o fn_ptrs.o

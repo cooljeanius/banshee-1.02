@@ -29,6 +29,7 @@
  */
 
 #include <assert.h>
+#include <string.h>
 #ifndef SPEC
 #include "nonspec.h"
 #endif
@@ -55,13 +56,13 @@ static void test_dyck_isomorphism()
   dyck_node d0,d1,d2,d3,d4,d5,d6,d7,d8,d9;
 
 #ifndef SPEC
-  int indices[2] = {0,1};
+  intptr_t indices[2] = {0,1};
   dyck_node nodes[2] = {NULL,NULL};
   dyck_node c0,c1,c2,c3,c4,c5;
 #endif /* SPEC */
   dyck_node e0,e1,e2,e3,e4,e5;
 //   flag_dyck_print_constraints = 1;
-  
+
   d0 = make_tagged_dyck_node("d0");
   d1 = make_tagged_dyck_node("d1");
   d2 = make_tagged_dyck_node("d2");
@@ -102,6 +103,13 @@ static void test_dyck_isomorphism()
     make_dyck_subtype_edge(c2,c3);
     make_dyck_close_edge_for_cluster(c3,c4,0);
     make_dyck_close_edge_for_cluster(c3,c5,1);
+  } else {
+    c0 = NULL;
+    c1 = NULL;
+    c2 = NULL;
+    c3 = NULL;
+    c4 = NULL;
+    c5 = NULL;
   }
 #endif /* SPEC */
 
@@ -112,12 +120,19 @@ static void test_dyck_isomorphism()
     e3 = make_tagged_dyck_node("e3");
     e4 = make_tagged_dyck_node("e4");
     e5 = make_tagged_dyck_node("e5");
-    
+
     make_dyck_contra_open_edge(e0,e1,1);
     make_dyck_contra_open_edge(e4,e1,2);
     make_dyck_subtype_edge(e1,e2);
-    make_dyck_contra_close_edge(e2,e3,1);   
+    make_dyck_contra_close_edge(e2,e3,1);
     make_dyck_contra_close_edge(e2,e5,2);
+  } else {
+    e0 = NULL;
+    e1 = NULL;
+    e2 = NULL;
+    e3 = NULL;
+    e4 = NULL;
+    e5 = NULL;
   }
 
   dyck_finished_adding();	// we've finished building the graph
@@ -131,7 +146,7 @@ static void test_dyck_isomorphism()
   myassert(!dyck_check_reaches(d0,d4)); // make sure that (_1 )_2 doesn't work
   myassert(!dyck_check_reaches(d5,d3)); // make sure that (_2 )_1 doesn't work
   myassert(!dyck_check_reaches(d0,d2)); // we're only doing matched reachability
-  myassert(!dyck_check_reaches(d5,d2)); // we're only doing matched reachability 
+  myassert(!dyck_check_reaches(d5,d2)); // we're only doing matched reachability
 
   myassert(!dyck_check_reaches(d0,d6)); // make sure nothing reaches d6 except d6
   myassert(!dyck_check_reaches(d1,d6));
@@ -198,7 +213,7 @@ static void test_dyck_isomorphism()
 /*     fclose(f); */
 /*   } */
 
-  
+
   printf("Passed dyck isomorphism test\n");
 }
 
@@ -208,7 +223,7 @@ static void test_dyck_reduction()
   mr_dyck_node d0,d1,d2,d3,d4,d5,d6,d7,d8,d9;//,d10,d11;
 
 // flag_mr_dyck_print_constraints = 1;
-  
+
   d0 = make_tagged_mr_dyck_node("d0");
   d1 = make_tagged_mr_dyck_node("d1");
   d2 = make_tagged_mr_dyck_node("d2");
@@ -216,7 +231,7 @@ static void test_dyck_reduction()
   d4 = make_tagged_mr_dyck_node("d4");
   d5 = make_tagged_mr_dyck_node("d5");
   d6 = make_tagged_mr_dyck_node("d6");
-  d7 = make_tagged_mr_dyck_node("d7");  
+  d7 = make_tagged_mr_dyck_node("d7");
   d8 = make_tagged_mr_dyck_node("d8");
   d9 = make_tagged_mr_dyck_node("d9");
 //   d10 = make_tagged_mr_dyck_node("d10");
@@ -227,6 +242,7 @@ static void test_dyck_reduction()
   make_mr_dyck_close_edge(d2,d3,1);
   make_mr_dyck_close_edge(d2,d4,2);
   make_mr_dyck_open_edge(d5,d1,2);
+  (void)d6;
   make_mr_dyck_close_edge(d7,d2,3);
   make_mr_dyck_subtype_edge(d1,d8);
   make_mr_dyck_close_edge(d8,d9,3);
@@ -239,11 +255,11 @@ static void test_dyck_reduction()
   myassert(mr_dyck_check_reaches(d1,d2)); // check that subtyping alone works
   myassert(mr_dyck_check_reaches(d0,d3));	// check that an open/close matching works
   myassert(mr_dyck_check_reaches(d5,d4)); // check another open/close matching
-  
+
   myassert(!mr_dyck_check_reaches(d0,d4)); // make sure that (_1 )_2 doesn't work
   myassert(!mr_dyck_check_reaches(d5,d3)); // make sure that (_2 )_1 doesn't work
   myassert(!mr_dyck_check_reaches(d0,d2)); // we're only doing matched reachability
-  myassert(!mr_dyck_check_reaches(d5,d2)); // we're only doing matched reachability 
+  myassert(!mr_dyck_check_reaches(d5,d2)); // we're only doing matched reachability
 
 //   myassert(!mr_dyck_check_reaches(d10,d11)); // only matched reachability
 
@@ -281,7 +297,7 @@ static void test_dyck_reduction()
 /*     mr_dyck_print_closed_graph(f); */
 /*     fclose(f); */
 /*   } */
-  
+
   printf("Passed dyck reduction test\n");
 }
 #endif /* SPEC */

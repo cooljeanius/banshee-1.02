@@ -73,16 +73,16 @@ $(ANDERSEN).h: $(ANDERSEN).c
 
 $(ANDERSEN_ST).c: $(ANDERSEN_ST).bsp $(BANSHEE)
 	$(BANSHEE) $(ANDERSEN_ST).bsp $(ANDERSEN_ST)
-	indent -npsl $@ 
+	indent -npsl $@
 
 $(ANDERSEN_ST).h: $(ANDERSEN_ST).c
-	indent -npsl $@ 
+	indent -npsl $@
 
 TAGS: $(TAGFILES)
 	etags $(TAGFILES)
 
 # build banshee if necessary
-$(BANSHEE): 
+$(BANSHEE):
 	$(MAKE) -C ../ banshee
 
 .PHONY: clean

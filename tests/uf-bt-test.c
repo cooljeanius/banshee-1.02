@@ -1,4 +1,4 @@
-/*
+/* tests/uf-bt-test.c
  * Copyright (c) 2000-2004
  *      The Regents of the University of California.  All rights reserved.
  *
@@ -34,8 +34,8 @@
 #include "ufind.h"
 #include "list.h"
 
-DECLARE_UFIND(elt,int);
-DEFINE_NONPTR_UFIND(elt,int);
+DECLARE_UFIND(elt,intptr_t);
+DEFINE_NONPTR_UFIND(elt,intptr_t);
 
 int main()
 {
@@ -52,22 +52,22 @@ int main()
   e3 = new_elt(scratchregion,3);
   e4 = new_elt(scratchregion,4);
 
-  elt_union(e1,e2);		// | e1 e2 | e3 | e4 | 
+  elt_union(e1,e2);		// | e1 e2 | e3 | e4 |
   //  printf("(%d,%d)\n",elt_get_info(e1),elt_get_info(e2));
   assert(elt_get_info(e2) == elt_get_info(e1));
-  uf_backtrack(); 		// | e1 | e2 | e3 | e4 | 
+  uf_backtrack(); 		// | e1 | e2 | e3 | e4 |
   //  printf("(%d,%d)\n",elt_get_info(e1),elt_get_info(e2));
   assert(elt_get_info(e1) == 1);
   assert(elt_get_info(e2) == 2);
-  elt_union(e1,e2);		// | e1 e2 | e3 | e4 | 
-  elt_union(e2,e3);		// | e1 e2 e3 | e4 | 
-  elt_union(e3,e4);		// | e1 e2 e3 e4 | 
+  elt_union(e1,e2);		// | e1 e2 | e3 | e4 |
+  elt_union(e2,e3);		// | e1 e2 e3 | e4 |
+  elt_union(e3,e4);		// | e1 e2 e3 e4 |
 
   assert(elt_get_info(e1) == elt_get_info(e2));
   assert(elt_get_info(e2) == elt_get_info(e3));
   assert(elt_get_info(e1) == elt_get_info(e4));
-    
-  uf_backtrack();		// | e1 e2 e3 | e4 | 
+
+  uf_backtrack();		// | e1 e2 e3 | e4 |
   assert(elt_get_info(e4) == 4);
 //   printf("(%d,%d,%d,%d)",elt_get_info(e1),elt_get_info(e2),elt_get_info(e3),
 // 	 elt_get_info(e4));
@@ -76,14 +76,14 @@ int main()
   assert(elt_get_info(e1) == elt_get_info(e2));
   assert(elt_get_info(e3) == 3);
   assert(elt_get_info(e4) == 4);
-  uf_backtrack();		// | e1 | e2 | e3 | e4 | 
+  uf_backtrack();		// | e1 | e2 | e3 | e4 |
   assert(elt_get_info(e1) == 1);
   assert(elt_get_info(e2) == 2);
   assert(elt_get_info(e3) == 3);
   assert(elt_get_info(e4) == 4);
 
   elt_update(e4,5);
-  
+
   assert(elt_get_info(e4) == 5);
   uf_backtrack();
   assert(elt_get_info(e4) == 4);

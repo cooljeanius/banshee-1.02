@@ -1,4 +1,4 @@
-/*
+/* engine/regexp.c
  * Copyright (c) 2005
  *      The Regents of the University of California.  All rights reserved.
  *
@@ -44,17 +44,17 @@ static char STAR = 1;
 struct regexp_ {
   unsigned char length; 	/* doesn't include the null terminator */
   letter *expr;			/* a null terminated string */
-  unsigned char necessary[32]; 
+  unsigned char necessary[32];
 };
 
 typedef struct regexp_ * regexp;
 
 static regexp regexp_calloc() {
-  return (regexp) calloc (1, sizeof(struct regexp_)); 
+  return (regexp) calloc (1, sizeof(struct regexp_));
 }
 
 //regexp regexp_alloc() {
-//  return (regexp) malloc (sizeof(struct regexp_)); 
+//  return (regexp) malloc (sizeof(struct regexp_));
 //}
 
 static letter* regexp_alloc_str(unsigned char length) {
@@ -126,14 +126,14 @@ int regexp_fast_disinclusion(regexp r1, regexp r2) {
   if (memcmp(r1->necessary, r2->necessary, sizeof(unsigned char) * 32) > 0) {
     return 1;
   }
-  return -1;  
+  return -1;
 }
 
 /* Recursive complete inclusion check, using backtracking */
 bool regexp_complete_inclusion(regexp r1, regexp r2, unsigned char pos1,
 			      unsigned char pos2, hash_table visited) {
 
-  unsigned int state = (pos1 << (8 * sizeof(unsigned char))) + pos2;
+  uintptr_t state = (pos1 << (8 * sizeof(unsigned char))) + pos2;
 
   /* case 0: empty/empty */
   if (!r1->expr[pos1] && !r2->expr[pos2]) {
@@ -160,9 +160,9 @@ bool regexp_complete_inclusion(regexp r1, regexp r2, unsigned char pos1,
   /* case 2: concat/star */
   /*  in r2 try both transitions. one of the branches must succeed */
   if (r1->expr[pos1] != STAR && r2->expr[pos2] == STAR) {
-    return 
-      regexp_complete_inclusion(r1, r2, pos1, pos2 + r2->expr[pos2 + 1], 
-				visited) 
+    return
+      regexp_complete_inclusion(r1, r2, pos1, pos2 + r2->expr[pos2 + 1],
+				visited)
       ||
       regexp_complete_inclusion(r1, r2, pos1, pos2 + 2, visited);
   }
@@ -170,9 +170,9 @@ bool regexp_complete_inclusion(regexp r1, regexp r2, unsigned char pos1,
   /* case 3: star/_ */
   /* transition in r1 both ways, both must succeed */
   if (r1->expr[pos1] == STAR) {
-    return 
-      regexp_complete_inclusion(r1, r2, pos1 + r1->expr[pos1 + 1] , pos2, 
-				visited) 
+    return
+      regexp_complete_inclusion(r1, r2, pos1 + r1->expr[pos1 + 1] , pos2,
+				visited)
       &&
       regexp_complete_inclusion(r1, r2, pos1 + 2, pos2, visited);
   }
@@ -188,7 +188,7 @@ bool regexp_complete_inclusion(regexp r1, regexp r2, unsigned char pos1,
 //  return (unsigned long) ptr;
 //}
 
-// see stamp.c 
+// see stamp.c
 static unsigned long state_hash(hash_key key)
 {
   unsigned long keyval = (unsigned long)key;
@@ -218,13 +218,13 @@ bool regexp_inclusion(regexp r1, regexp r2) {
   /* Fast equality check */
   if (!strcmp((char *)r1->expr,(char *)r2->expr)) {
     return TRUE;
-  }		
+  }
 
   /* Fast disinclusion check */
   else if (regexp_fast_disinclusion(r1, r2) == 1) {
     return FALSE;
   }
- 
+
   /* Complete inclusion check */
   else {
     bool result = FALSE;
@@ -240,7 +240,7 @@ bool regexp_inclusion(regexp r1, regexp r2) {
 
 /* Debugging routines */
 
-static void regexp_print_subexpr(regexp r, unsigned char start, 
+static void regexp_print_subexpr(regexp r, unsigned char start,
 				 unsigned char end) {
   while (start < end && r->expr[start] != STAR) {
     putchar(r->expr[start]);
