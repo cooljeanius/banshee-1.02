@@ -35,9 +35,9 @@
 #include "persist.h"
 #include "banshee_region_persist_kinds.h"
 
-#ifndef DEBUG
+#if !defined(DEBUG) && 0
 # define DEBUG 1
-#endif /* !DEBUG */
+#endif /* !DEBUG && 0 */
 
 struct bucket_
 {
@@ -388,7 +388,11 @@ bool hash_table_next(hash_table_scanner *hts, hash_key *k, hash_data *d)
 	  *k = NULL;
 	}
       } else {
+#ifdef DEBUG
 	fprintf(stderr, "Cannot put key in k because k is NULL.\n");
+#else
+	(void)k;
+#endif /* DEBUG */
       }
       if (d) {
 	if (hts && hts->cur) {
@@ -400,7 +404,11 @@ bool hash_table_next(hash_table_scanner *hts, hash_key *k, hash_data *d)
 	  *d = NULL;
 	}
       } else {
+#ifdef DEBUG
 	fprintf(stderr, "Cannot put data in d because d is NULL.\n");
+#else
+	(void)d;
+#endif /* DEBUG */
       }
       if (hts && hts->cur)
 	hts->cur = hts->cur->next;

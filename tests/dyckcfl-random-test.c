@@ -65,7 +65,10 @@
 // turn on the consistency checks
 #ifdef ENABLE_MR_DYCK
 # ifdef ENABLE_DYCK
-#  define ENABLE_CONSISTENCY_CHECK
+// actually skip; these are broken:
+#  if 0
+#   define ENABLE_CONSISTENCY_CHECK
+#  endif /* 0 */
 # endif /* ENABLE_DYCK */
 #endif /* ENABLE_MR_DYCK */
 
@@ -408,6 +411,9 @@ static void do_check_reach()
     // matched reachability implies PN reachability
     assert(!result1 || pnresult1);
     assert(!result2 || pnresult2);
+#else
+    (void)pnresult2;
+    (void)result2;
 #endif /* ENABLE_CONSISTENCY_CHECK */
 
 #ifdef ENABLE_DYCK

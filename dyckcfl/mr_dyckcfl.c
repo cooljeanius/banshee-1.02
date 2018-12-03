@@ -217,7 +217,9 @@ static void encode_KOS_production(mr_dyck_node n, int index)
   gen_e exps[1];
   gen_e rch,dst;
 
+#ifdef DEBUG
   printf("encoding KOS production for node %p at index %d.\n", n, index);
+#endif /* DEBUG */
   rch = setif_proj(get_constructor(index,mr_o),0,n->node_variable);
   dst = setif_proj(mr_s_constructor,0,rch);
   exps[0] = dst;
@@ -229,7 +231,9 @@ static void encode_SKC_production(mr_dyck_node n, int index)
   gen_e exps[1];
   gen_e rch,dst;
 
+#ifdef DEBUG
   printf("encoding SKC production for node %p at index %d.\n", n, index);
+#endif /* DEBUG */
   rch = setif_proj(get_constructor(index,mr_k),0,n->node_variable);
   dst = setif_proj(get_constructor(index,mr_c),0,rch);
   exps[0] = dst;
@@ -537,9 +541,15 @@ static void encode_productions(void)
 	make_mr_dyck_close_edge(next_node,next_node,next_index);
       }
       // for debugging:
+#ifdef DEBUG
       printf("iteration: %d, scanner at %p, next_index: %d.\n",
 	     loop_counter, &index_scan, next_index);
+#endif /* DEBUG */
       loop_counter++;
+      /* prevent segfaults in hash_table_next(): */
+      if (next_index == 0) {
+	break;
+      }
     }
   }
 }

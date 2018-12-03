@@ -278,6 +278,7 @@ static void pt_deserialize()
 
 void seed_fn_ptr_table(region r);
 
+/* main */
 int main(int argc, char **argv)
 {
   assert(argc > 0);
@@ -314,3 +315,5 @@ int main(int argc, char **argv)
 
   return 0;
 }
+
+/* EOF */
