@@ -46,7 +46,7 @@ CFLAGS = -I. -I$(region_dir) -Ddeletes= -Dtraditional= -Dsameregion= \
 	 -Dparentptr= -Wall -Wextra -Wno-unused-parameter -Wnull-dereference \
 	 -Warray-bounds=2 -Wtrampolines -Wempty-body -Wlogical-op \
 	 -Wjump-misses-init -Wduplicated-branches -Wduplicated-cond -Og \
-	 -ftree-vrp -g -fno-strict-aliasing -fno-common
+	 -ftree-vrp -g -fno-strict-aliasing -fno-common -ftrapv
 
 ifndef NO_BANSHEE_ROLLBACK
 CFLAGS := -DBANSHEE_ROLLBACK ${CFLAGS}
@@ -107,6 +107,4 @@ nonspec.o: nonspec.c nonspec.h
 clean:
 	-rm -f *.o $(TARGETS) *~ fn_ptrs.ns.c fn_ptrs.c
 
-
-
-
+## EOF

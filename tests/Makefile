@@ -45,7 +45,7 @@ CC = gcc
 CFLAGS = -I$(engine_dir) -I$(region_dir) -Ddeletes= -Dtraditional= \
          -Dsameregion= -Dparentptr= -Wall -Wextra -Og -Wnull-dereference \
 	 -Wtrampolines -Wempty-body -Wlogical-op -Wjump-misses-init \
-	 -Wduplicated-branches -Wduplicated-cond
+	 -Wduplicated-branches -Wduplicated-cond -ftrapv
 
 ifdef DEBUG
 CFLAGS := -g -pg ${CFLAGS}

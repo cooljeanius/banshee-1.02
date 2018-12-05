@@ -1,4 +1,4 @@
-/*
+/* engine/persist.h
  * Copyright (c) 2000-2004
  *      The Regents of the University of California.  All rights reserved.
  *
@@ -38,10 +38,10 @@
    requests. These are hashed so that multiple attempts to serialize
    the same object are ignored. Object identity is just pointer
    equality.
-   
+
    Each object is written out as a triple (kind, id, data). The
    meaning of these fields is as follows:
-   
+
    1. kind -- an unsigned int identifying the type of the
    object. Clients of the persistence manager must provide a mapping
    from kinds to serialization function pointers (for serialization)
@@ -51,17 +51,17 @@
 
    2. id -- this is the address of the object. It is needed to
    reconstruct the object graph during deserialization.
-   
+
    3. data -- the contents of the object. It is expected that
    pointer-valued objects are just written out as addresses. During
    deserialization a second pass over the object graph will fill in
    these pointers after an initial construction phase where all
    pointers are invalid (contain object id's, not valid
-   pointers). 
+   pointers).
 
    Each struct must provide the following methods to support
    persistence:
-   
+
    a) bool serialize(FILE *f, void *obj)
 
       This function should serialize the struct. All pointer-valued
@@ -114,12 +114,12 @@ typedef void * (*deserialize_fn_ptr) (FILE *f);
 typedef bool (*set_fields_fn_ptr) (void *obj);
 
 /* Serialization */
-void serialize_start(FILE *f, serialize_fn_ptr kind_map[], int length);
-bool serialize_object(void *obj, int kind); 
+void serialize_start(FILE *f, serialize_fn_ptr kind_map[], size_t length);
+bool serialize_object(void *obj, int kind);
 void serialize_end(void);
 
 /* Deserialization */
-bool deserialize_all(FILE *f, deserialize_fn_ptr deserialize_obj[], 
+bool deserialize_all(FILE *f, deserialize_fn_ptr deserialize_obj[],
 		set_fields_fn_ptr set_fields[], int length);
 void *deserialize_get_obj(void *old_obj);
 bool deserialize_set_obj(void **old_obj);

@@ -73,7 +73,7 @@ extern hash_table fn_ptr_table;
 extern void *fn_ptr_array[];
 
 /* Serialization */
-void serialize_start(FILE *f, serialize_fn_ptr kind_map[], int length)
+void serialize_start(FILE *f, serialize_fn_ptr kind_map[], size_t length)
 {
   assert(current_state == persist_raw);
   assert(f);
@@ -82,10 +82,10 @@ void serialize_start(FILE *f, serialize_fn_ptr kind_map[], int length)
   current_state = persist_serializing;
 
   serialize_queue = new_persist_entry_queue(persist_rgn);
-  serialized_objects = make_hash_table(persist_rgn, 128, ptr_hash, ptr_eq);
+  serialized_objects = make_hash_table(persist_rgn, 128UL, ptr_hash, ptr_eq);
 
   current_file = f;
-  num_kinds = length;
+  num_kinds = (int)length;
   serialize_fns = rarrayalloc(persist_rgn, length, serialize_fn_ptr);
   rarraycopy(serialize_fns, kind_map, length, serialize_fn_ptr);
 }
@@ -99,8 +99,8 @@ static bool do_serialize_object(void *obj, int kind)
   assert(kind < num_kinds);
   assert(current_file);
 
-  success = fwrite((void *)&kind,sizeof(int),1,current_file);
-  success &= fwrite((void*)&obj, sizeof(void *), 1, current_file);
+  success = fwrite((void *)&kind, sizeof(int), 1UL, current_file);
+  success &= fwrite((void*)&obj, sizeof(void *), 1UL, current_file);
 
   success &= serialize_fns[kind](current_file, obj);
 
@@ -117,7 +117,7 @@ bool serialize_object(void *obj, int kind)
   /* Don't serialize null objects */
   if (!obj) return TRUE;
 
-  if ( hash_table_insert(serialized_objects, (hash_key)obj, (hash_data) NULL)) {
+  if (hash_table_insert(serialized_objects, (hash_key)obj, (hash_data) NULL)) {
     entry = ralloc(persist_rgn, struct persist_entry_);
     entry->kind = kind;
     entry->obj = obj;
@@ -154,14 +154,14 @@ static bool create_objects(FILE *f, deserialize_fn_ptr deserialize_obj[],
   int kind;
   int num_objects = 0;
   bool success = TRUE;
-  persist_entry entry;
+  persist_entry entry = NULL;
 
   assert(f);
 
-  while (1 == fread((void *)&kind, sizeof(int), 1, f)) {
+  while (1 == fread((void *)&kind, sizeof(int), 1UL, f)) {
     assert(kind < length);
 
-    success &= fread((void *)&id, sizeof(void *), 1, f);
+    success &= fread((void *)&id, sizeof(void *), 1UL, f);
 
 #ifdef DEBUG
     printf("Passing file at %p to deserialization function of kind %d at %p.\n",
@@ -179,8 +179,6 @@ static bool create_objects(FILE *f, deserialize_fn_ptr deserialize_obj[],
       entry->obj = obj;
       success &=
 	hash_table_insert(object_map, (hash_key)id, (hash_data)entry);
-    } else {
-      entry = NULL;
     }
     num_objects++;
   }
@@ -213,7 +211,7 @@ static bool set_object_fields(set_fields_fn_ptr set_fields[], int length)
 
 /* Deserialization */
 bool deserialize_all(FILE *f, deserialize_fn_ptr deserialize_obj[],
-		set_fields_fn_ptr set_fields[], int length)
+		     set_fields_fn_ptr set_fields[], int length)
 {
   assert(current_state == persist_raw);
   assert(length > 0);
@@ -222,7 +220,7 @@ bool deserialize_all(FILE *f, deserialize_fn_ptr deserialize_obj[],
   persist_rgn = newregion();
   current_state = persist_deserializing;
 
-  object_map = make_hash_table(persist_rgn, 128, ptr_hash, ptr_eq);
+  object_map = make_hash_table(persist_rgn, 128UL, ptr_hash, ptr_eq);
 
   create_objects(f, deserialize_obj, length);
   set_object_fields(set_fields, length);
@@ -286,7 +284,7 @@ bool funptr_data_serialize(FILE *f, void *obj)
 
   success = hash_table_lookup(fn_ptr_table,(hash_key)obj, (hash_data*)&id);
 
-  success &= fwrite((void *)&id, sizeof(int), 1, f);
+  success &= fwrite((void *)&id, sizeof(int), 1UL, f);
 
   if (!success) {
     fprintf(stderr, "Warning: failed to serialize a function pointer\n");
@@ -300,7 +298,7 @@ void *funptr_data_deserialize(FILE *f)
   int id = 0;
   assert(f);
 
-  fread((void *)&id, sizeof(int), 1, f);
+  fread((void *)&id, sizeof(int), 1UL, f);
 
   return fn_ptr_array[id];
 }
@@ -317,28 +315,34 @@ bool funptr_data_set_fields(void *obj)
 
 bool string_data_serialize(FILE *f, void *obj)
 {
-  int length = strlen((char *)obj);
+  size_t length = strlen((char *)obj);
   /* write the string length */
-  fwrite((void *)&length, sizeof(long), 1, f);
+  fwrite((void *)&length, sizeof(long), 1UL, f);
   fwrite((void *)obj, sizeof(char),strlen((char *)obj), f);
 
   return TRUE;
 }
 
+/* */
 void *string_data_deserialize(FILE *f)
 {
-  long length;
+  size_t length;
   char buf[512];
+  size_t objs_read;
 
   assert(f != NULL);
 #ifdef DEBUG
   printf("File: %p.\n", f);
 #endif /* DEBUG */
-  fread((void *)&length, sizeof(long), 1, f);
+  objs_read = fread((void *)&length, sizeof(size_t), 1UL, f);
 #ifdef DEBUG
-  printf("length: %ld.\n", length);
+  printf("length: %zu; objs_read: %zu.\n", length, objs_read);
+  if (length >= 512) {
+    printf("EOF? %d, Error? %d, pos: %ld, fileno: %d.\n", feof(f), ferror(f),
+	   ftell(f), fileno(f));
+  }
 #endif /* DEBUG */
-  assert(length < 512);
+  assert(length < 512UL); /* FIXME: this assert can fail */
   fread((void *)buf, sizeof(char), length, f);
   buf[length] = '\0';
 
@@ -350,3 +354,5 @@ bool string_data_set_fields(void *obj)
 {
   return TRUE;
 }
+
+/* EOF */

@@ -1,4 +1,4 @@
-/*
+/* tests/dyckcfl-test.c
  * Copyright (c) 2000-2004
  *      The Regents of the University of California.  All rights reserved.
  *
@@ -31,13 +31,13 @@
 #include <assert.h>
 #include <string.h>
 #ifndef SPEC
-#include "nonspec.h"
-#endif
+# include "nonspec.h"
+#endif /* !SPEC */
 #include "dyckcfl.h"
 
 #ifndef SPEC
-#include "mr_dyckcfl.h"
-#endif
+# include "mr_dyckcfl.h"
+#endif /* !SPEC */
 
 bool test_dyck_clustering = TRUE;
 bool test_dyck_contra = TRUE;
@@ -51,7 +51,7 @@ static void myassert(int a) {
 }
 
 
-static void test_dyck_isomorphism()
+static void test_dyck_isomorphism(void)
 {
   dyck_node d0,d1,d2,d3,d4,d5,d6,d7,d8,d9;
 
@@ -61,7 +61,9 @@ static void test_dyck_isomorphism()
   dyck_node c0,c1,c2,c3,c4,c5;
 #endif /* SPEC */
   dyck_node e0,e1,e2,e3,e4,e5;
-//   flag_dyck_print_constraints = 1;
+#if 0
+  flag_dyck_print_constraints = 1;
+#endif /* 0 */
 
   d0 = make_tagged_dyck_node("d0");
   d1 = make_tagged_dyck_node("d1");
@@ -85,8 +87,9 @@ static void test_dyck_isomorphism()
   mark_dyck_node_global(d8);
 
 
-
-//   flag_dyck_print_constraints = 1;
+#if 0
+  flag_dyck_print_constraints = 1;
+#endif /* 0 */
 
   // Clustering test
 #ifndef SPEC
@@ -101,6 +104,7 @@ static void test_dyck_isomorphism()
     nodes[1] = c1;
     make_clustered_dyck_open_edges(nodes,c2,indices,2);
     make_dyck_subtype_edge(c2,c3);
+    // FIXME:
     make_dyck_close_edge_for_cluster(c3,c4,0);
     make_dyck_close_edge_for_cluster(c3,c5,1);
   } else {
@@ -135,7 +139,7 @@ static void test_dyck_isomorphism()
     e5 = NULL;
   }
 
-  dyck_finished_adding();	// we've finished building the graph
+  dyck_finished_adding();	// we have finished building the graph
 
 
   myassert(dyck_check_reaches(d1,d1)); // check that reflexivity works
@@ -143,8 +147,8 @@ static void test_dyck_isomorphism()
   myassert(dyck_check_reaches(d0,d3)); // check that an open/close matching works
   myassert(dyck_check_reaches(d5,d4)); // check another open/close matching
 
-  myassert(!dyck_check_reaches(d0,d4)); // make sure that (_1 )_2 doesn't work
-  myassert(!dyck_check_reaches(d5,d3)); // make sure that (_2 )_1 doesn't work
+  myassert(!dyck_check_reaches(d0,d4)); // make sure that (_1 )_2 fails
+  myassert(!dyck_check_reaches(d5,d3)); // make sure that (_2 )_1 fails
   myassert(!dyck_check_reaches(d0,d2)); // we're only doing matched reachability
   myassert(!dyck_check_reaches(d5,d2)); // we're only doing matched reachability
 
@@ -162,8 +166,8 @@ static void test_dyck_isomorphism()
   myassert(dyck_check_pn_reaches(d0,d3));	// check that an open/close matching works
   myassert(dyck_check_pn_reaches(d5,d4)); // check another open/close matching
 
-  myassert(!dyck_check_pn_reaches(d0,d4)); // make sure that (_1 )_2 doesn't work
-  myassert(!dyck_check_pn_reaches(d5,d3)); // make sure that (_2 )_1 doesn't work
+  myassert(!dyck_check_pn_reaches(d0,d4)); // make sure that (_1 )_2 fails
+  myassert(!dyck_check_pn_reaches(d5,d3)); // make sure that (_2 )_1 fails
   myassert(dyck_check_pn_reaches(d5,d2)); // check n reachability
   myassert(dyck_check_pn_reaches(d0,d2)); // check n reachability
   myassert(dyck_check_pn_reaches(d1,d3)); // check p reachability
@@ -180,8 +184,10 @@ static void test_dyck_isomorphism()
   myassert(dyck_check_pn_reaches(d0,d9)); // pn reachability using a global
   myassert(dyck_check_pn_reaches(d5,d9));	// pn reachability using a global
   myassert(!dyck_check_reaches(d7,d9)); // no matched reachability, even through global
-  //myassert(!dyck_check_reaches(d0,d9)); // no matched reachability using a global
-  //myassert(!dyck_check_reaches(d5,d9)); // no matched reachability using a global
+#if 0
+  myassert(!dyck_check_reaches(d0,d9)); // no matched reachability using a global
+  myassert(!dyck_check_reaches(d5,d9)); // no matched reachability using a global
+#endif /* 0 */
   myassert(dyck_check_reaches(d8,d9)); // check for promotion of p reachability to matched
 
 #ifndef SPEC
@@ -205,24 +211,27 @@ static void test_dyck_isomorphism()
 #endif /* SPEC */
 
   dyck_pn_reaches(d9);
+#ifdef DOT_DEBUG
   // Print the closed graph
-/*   { */
-/*     FILE *f = fopen("closed_graph.dot","w"); */
-/*     myassert(f); */
-/*     dyck_print_closed_graph(f); */
-/*     fclose(f); */
-/*   } */
-
+  if (DOT_DEBUG) {
+     FILE *f = fopen("closed_graph.dot","w");
+     myassert(f);
+     dyck_print_closed_graph(f);
+     fclose(f);
+  }
+#endif /* DOT_DEBUG */
 
   printf("Passed dyck isomorphism test\n");
 }
 
 #ifndef SPEC
-static void test_dyck_reduction()
+static void test_dyck_reduction(void)
 {
   mr_dyck_node d0,d1,d2,d3,d4,d5,d6,d7,d8,d9;//,d10,d11;
 
-// flag_mr_dyck_print_constraints = 1;
+#if 0
+ flag_mr_dyck_print_constraints = 1;
+#endif /* 0 */
 
   d0 = make_tagged_mr_dyck_node("d0");
   d1 = make_tagged_mr_dyck_node("d1");
@@ -234,8 +243,10 @@ static void test_dyck_reduction()
   d7 = make_tagged_mr_dyck_node("d7");
   d8 = make_tagged_mr_dyck_node("d8");
   d9 = make_tagged_mr_dyck_node("d9");
-//   d10 = make_tagged_mr_dyck_node("d10");
-//   d11 = make_tagged_mr_dyck_node("d11");
+#if 0
+  d10 = make_tagged_mr_dyck_node("d10");
+  d11 = make_tagged_mr_dyck_node("d11");
+#endif /* 0 */
 
   make_mr_dyck_subtype_edge(d1,d2);
   make_mr_dyck_open_edge(d0,d1,1);
@@ -247,21 +258,25 @@ static void test_dyck_reduction()
   make_mr_dyck_subtype_edge(d1,d8);
   make_mr_dyck_close_edge(d8,d9,3);
   mark_mr_dyck_node_global(d8);
-//   make_mr_dyck_close_edge(d10,d11,4);
+#if 0
+  make_mr_dyck_close_edge(d10,d11,4);
+#endif /* 0 */
 
-  mr_dyck_finished_adding();	// we've finished building the graph
+  mr_dyck_finished_adding();	// we have finished building the graph
 
   myassert(mr_dyck_check_reaches(d1,d1)); // check that reflexivity works
   myassert(mr_dyck_check_reaches(d1,d2)); // check that subtyping alone works
-  myassert(mr_dyck_check_reaches(d0,d3));	// check that an open/close matching works
+  myassert(mr_dyck_check_reaches(d0,d3)); // check that an open/close matching works
   myassert(mr_dyck_check_reaches(d5,d4)); // check another open/close matching
 
-  myassert(!mr_dyck_check_reaches(d0,d4)); // make sure that (_1 )_2 doesn't work
-  myassert(!mr_dyck_check_reaches(d5,d3)); // make sure that (_2 )_1 doesn't work
+  myassert(!mr_dyck_check_reaches(d0,d4)); // make sure that (_1 )_2 fails
+  myassert(!mr_dyck_check_reaches(d5,d3)); // make sure that (_2 )_1 fails
   myassert(!mr_dyck_check_reaches(d0,d2)); // we're only doing matched reachability
   myassert(!mr_dyck_check_reaches(d5,d2)); // we're only doing matched reachability
 
-//   myassert(!mr_dyck_check_reaches(d10,d11)); // only matched reachability
+#if 0
+  myassert(!mr_dyck_check_reaches(d10,d11)); // only matched reachability
+#endif /* 0 */
 
   // PN reachability checking
   myassert(mr_dyck_check_pn_reaches(d1,d1)); // check that reflexivity works
@@ -269,8 +284,8 @@ static void test_dyck_reduction()
   myassert(mr_dyck_check_pn_reaches(d0,d3)); // check that an open/close matching works
   myassert(mr_dyck_check_pn_reaches(d5,d4)); // check another open/close matching
 
-  myassert(!mr_dyck_check_pn_reaches(d0,d4)); // make sure that (_1 )_2 doesn't work
-  myassert(!mr_dyck_check_pn_reaches(d5,d3)); // make sure that (_2 )_1 doesn't work
+  myassert(!mr_dyck_check_pn_reaches(d0,d4)); // make sure that (_1 )_2 fails
+  myassert(!mr_dyck_check_pn_reaches(d5,d3)); // make sure that (_2 )_1 fails
   myassert(mr_dyck_check_pn_reaches(d5,d2)); // check n reachability
   myassert(mr_dyck_check_pn_reaches(d0,d2)); // check n reachability
   myassert(mr_dyck_check_pn_reaches(d1,d3)); // check p reachability
@@ -287,39 +302,45 @@ static void test_dyck_reduction()
   myassert(mr_dyck_check_pn_reaches(d0,d9)); // pn reachability using a global
   myassert(mr_dyck_check_pn_reaches(d5,d9)); // pn reachability using a global
   myassert(!mr_dyck_check_reaches(d7,d9)); // no matched reachability, even through global
-  //myassert(!mr_dyck_check_reaches(d0,d9)); // no matched reachability using a global
-  //myassert(!mr_dyck_check_reaches(d5,d9)); // no matched reachability using a global
+#if 0
+  myassert(!mr_dyck_check_reaches(d0,d9)); // no matched reachability using a global
+  myassert(!mr_dyck_check_reaches(d5,d9)); // no matched reachability using a global
+#endif /* 0 */
 
+#ifdef DOT_DEBUG
   // Print the closed graph
-/*   { */
-/*     FILE *f = fopen("mr_closed_graph.dot","w"); */
-/*     myassert(f); */
-/*     mr_dyck_print_closed_graph(f); */
-/*     fclose(f); */
-/*   } */
+  if (DOT_DEBUG) {
+     FILE *f = fopen("mr_closed_graph.dot","w");
+     myassert(f);
+     mr_dyck_print_closed_graph(f);
+     fclose(f);
+  }
+#endif /* DOT_DEBUG */
 
   printf("Passed dyck reduction test\n");
 }
 #endif /* SPEC */
 
-
-int main()
+/* main */
+int main(void)
 {
 #ifndef SPEC
   nonspec_init();
-#endif
+#endif /* !SPEC */
   dyck_init(TRUE);
-  // flag_merge_projections = FALSE;
+#if 0
+  flag_merge_projections = FALSE;
+#endif /* 0 */
 
 #ifndef SPEC
   mr_dyck_init(TRUE,NULL);
-#endif
+#endif /* !SPEC */
 
   test_dyck_isomorphism();
 
 #ifndef SPEC
   test_dyck_reduction();
-#endif
+#endif /* !SPEC */
 
   /* Do it one more time to test queries interspersed between
      constraint additions */
@@ -327,3 +348,5 @@ int main()
 
   return 0;
 }
+
+/* EOF */

@@ -46,6 +46,10 @@
 #define NODE_PERSIST_KIND 3
 #define HASH_PERSIST_KIND 4
 
+#ifndef DEBUG
+# define DEBUG 1
+#endif /* !DEBUG */
+
 /* Types */
 struct node_ {
   intptr_t data;
@@ -189,8 +193,14 @@ static void pt_deserialize()
   infile = fopen(DEFAULT_FILENAME, "rb");
 
   if (infile == NULL) {
-    printf("Couldn't open %s\n", DEFAULT_FILENAME);
+    printf("Failed to open %s\n", DEFAULT_FILENAME);
     exit(1);
+  } else {
+#ifdef DEBUG
+    printf("Successfully opened %s\n", DEFAULT_FILENAME);
+#else
+    assert(infile != NULL);
+#endif
   }
 
   /* Read in the old address of n1 and store it as n */

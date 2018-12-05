@@ -1,4 +1,4 @@
-/*
+/* dyckcfl/dyckcfl.c
  * Copyright (c) 2000-2004
  *      The Regents of the University of California.  All rights reserved.
  *
@@ -37,7 +37,15 @@
 #define CONS_CLOSE "close"
 #define CONS_OPEN_CLUSTER "opencluster"
 
-//  #define DYCK_DOT_DEBUG
+#ifndef DYCK_DOT_DEBUG
+# ifdef HAVE_GRAPHVIZ
+#  define DYCK_DOT_DEBUG
+# endif /* HAVE_GRAPHVIZ */
+#endif /* !DYCK_DOT_DEBUG */
+
+#ifndef DEBUG
+# define DEBUG 1
+#endif /* !DEBUG */
 
 /*****************************************************************************
  *                                                                           *
@@ -430,13 +438,32 @@ static cluster_cons get_cluster_constructor(intptr_t index)
 static int get_position_of(cluster_cons cc, int index)
 {
   int i;
+#ifdef DEBUG
+  printf("Looking for index in %p (which has length %d) equal to %d.\n", cc,
+	 cc->length, index);
+#endif /* DEBUG */
   for (i = 0; i < cc->length; i++) {
-    if (cc->indices[i] == index) return i;
+    if (cc->indices[i] == index) {
+#ifdef DEBUG
+      printf("Found at i: %d.\n", i);
+#endif /* DEBUG */
+      return i;
+    } else {
+#ifdef DEBUG
+      printf("Mismatch: index %d is %d, not %d.\n", i, cc->indices[i], index);
+#else
+# if defined(__GNUC__) && !defined(__STRICT_ANSI__)
+      __asm__("");
+# endif /* __GNUC__ && !__STRICT_ANSI__ */
+#endif /* DEBUG */
+    }
   }
+  // FIXME: should never get here:
   assert(0);
   return -1;
 }
 
+/* 0 */
 void make_dyck_close_edge_for_cluster(dyck_node n1, dyck_node n2, int index)
 {
   cluster_cons cc = get_cluster_constructor(index);
@@ -444,21 +471,25 @@ void make_dyck_close_edge_for_cluster(dyck_node n1, dyck_node n2, int index)
   assert(state == dyck_inited);
 
   if (cc) {
+#ifdef DEBUG
+    printf("cc: %p\n", cc);
+#endif /* DEBUG */
     my_call_setif_inclusion(n1->node_variable,
 			    setif_proj_pat(cc->c,
-					   get_position_of(cc,index),
+					   get_position_of(cc, index),
 					   n2->node_variable));
   }
   // If at any point we unclustered the index, we also have to
   // make a close edge
   if (is_unclustered_index(index)) {
-    make_dyck_close_edge(n1,n2,index);
+    make_dyck_close_edge(n1, n2, index);
   }
   else if (pn_reach) make_dyck_p_edge(n1, n2);
 
 
 #ifdef DYCK_DOT_DEBUG
-  fprintf(dotfile,"\"%s\" -> \"%s\" [label=\")_%d\"];\n",n1->unique_name,n2->unique_name,index);
+  fprintf(dotfile, "\"%s\" -> \"%s\" [label=\")_%d\"];\n", n1->unique_name,
+	  n2->unique_name, index);
 #endif
 }
 
@@ -705,3 +736,4 @@ void dyck_print_closed_graph(FILE *f)
   fprintf(f,"\n}");
 }
 
+/* EOF */
