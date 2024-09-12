@@ -2,3 +2,6 @@
 *.exe
 *.BAK
 *.dSYM
+*.xcuserstate
+*/xcuserdata/*
+*.xcuserdatad
