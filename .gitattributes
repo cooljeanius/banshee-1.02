@@ -1,1 +1,2 @@
-tests/test.programs/cqual.preproc/*.i linguist-language=c
+tests/test.programs/c*.*/*.i linguist-language=c
+tests/test.*/*.preproc/*.i linguist-generated
